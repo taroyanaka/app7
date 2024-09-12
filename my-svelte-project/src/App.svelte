@@ -22,6 +22,10 @@
     let selectedMemberId = '';
     let activeTab = 'projects';
     let languageData = {
+		plan: 'Plan',
+		do: 'Do',
+		check: 'Check',
+		act: 'Act',
         projectManagement: 'Project Management',
         packManagement: 'Pack Management',
         progressManagement: 'Progress Management',
@@ -98,7 +102,7 @@
     // Lifecycle: similar to `mounted` and `created` in Vue
     onMount(() => {
         // This can replace the "mounted" or "created" lifecycle hooks
-        languageData = lang;
+        // languageData = lang;
         sampleProjectAndThePacks();
     });
 
@@ -447,74 +451,6 @@ return {initDb, getUser, getProject, getMember, getProjectMember, getObjectivePr
                 <button on:click={() => sortProjects('kpi', 'desc')}>sortByKPIDesc</button>
                 <!-- Other sorting buttons -->
             </div>
-			<script>
-				import { onMount } from 'svelte';
-				
-				let sortedProjects = [];
-				let members = [];
-				let selectedMemberId = null;
-				
-				// Dummy data for example
-				// In real usage, replace these with actual data fetching or props
-				let languageData = {
-					current_price: 'Current Price',
-					target_price: 'Target Price',
-					addObjectivePrice: 'Add Objective Price',
-					objective_price: 'Objective Price',
-					priceDescription: 'Price Description',
-					addMember: 'Add Member',
-					add: 'Add',
-					name: 'Name',
-					position: 'Position',
-					link: 'Link',
-					delete: 'Delete',
-					packsSummary: 'Packs Summary',
-					viewPacks: 'View Packs',
-				};
-			
-				function formatDate(date) {
-					return new Date(date).toLocaleString(); // Simple date formatting
-				}
-			
-				function projectProgress(project) {
-					// Placeholder for calculating project progress
-					return Math.min(100, Math.max(0, project.progress || 0));
-				}
-			
-				function addObjectivePrice(projectId) {
-					// Implement the function to add objective price
-				}
-			
-				function removeObjectivePrice(projectId, index) {
-					// Implement the function to remove objective price
-				}
-			
-				function addMemberToProjectOrPack(projectId, packId, memberId) {
-					// Implement the function to add member to project or pack
-				}
-			
-				function removeMemberFromProjectOrPack(projectId, packId, memberId) {
-					// Implement the function to remove member from project or pack
-				}
-			
-				function getSelectedMember() {
-					return members.find(member => member.id === selectedMemberId);
-				}
-			
-				function getPacksByProject(projectId) {
-					// Placeholder function for fetching packs by project
-					return [];
-				}
-			
-				function deleteProject(projectId) {
-					// Implement the function to delete a project
-				}
-			
-				// Sample onMount logic
-				onMount(() => {
-					// Initialize or fetch data here
-				});
-			</script>
 			
 			<div class="project-list">
 				{#each sortedProjects as project (project.id)}
@@ -631,7 +567,9 @@ return {initDb, getUser, getProject, getMember, getProjectMember, getObjectivePr
 				{#each ['plan', 'do', 'check', 'act'] as stage}
 					<!-- doneのステージは灰色に -->
 					<div class="stage" class:done={pack[stage].done}>
-						<p>{languageData[stage]}: {pack[stage]?.description}</p>
+						<p>{ stage }: {pack[stage]?.description}</p>
+						<!-- <p>{ stage === 'plan' ? languageData[plan] : stage === 'do' ? languageData[do] : stage === 'check' ? languageData[check] : languageData[act] }: {pack[stage]?.description}</p> -->
+						<!-- <p>{ stage }</p> -->
 	
 						<!-- リンクが存在する場合にのみ表示 -->
 						{#if pack[stage]?.links && pack[stage].links.length > 0}
