@@ -193,38 +193,40 @@
 
 <script>
 const all_fetch_fn = () => {
-const getUser = id => fetch(`/users/${id}`).then(res => res.json()); // ユーザー取得
-const getProject = id => fetch(`/projects/${id}`).then(res => res.json()); // プロジェクト取得
-const getMember = id => fetch(`/members/${id}`).then(res => res.json()); // メンバー取得
-const getProjectMember = (project_id, member_id) => fetch(`/project_members/${project_id}/${member_id}`).then(res => res.json()); // プロジェクトメンバー取得
-const getObjectivePrice = id => fetch(`/objective_prices/${id}`).then(res => res.json()); // 価格取得
-const getPack = id => fetch(`/packs/${id}`).then(res => res.json()); // パック取得
-const getImprovementIdea = id => fetch(`/improvement_ideas/${id}`).then(res => res.json()); // 改善アイデア取得
-const getLink = id => fetch(`/links/${id}`).then(res => res.json()); // リンク取得
+// const endpoint = "https://cotton-concrete-catsup.glitch.me";
+const endpoint = "http://localhost:8000";
+const getUser = id => fetch(endpoint+`/users/${id}`).then(res => res.json()); // ユーザー取得
+const getProject = id => fetch(endpoint+`/projects/${id}`).then(res => res.json()); // プロジェクト取得
+const getMember = id => fetch(endpoint+`/members/${id}`).then(res => res.json()); // メンバー取得
+const getProjectMember = (project_id, member_id) => fetch(endpoint+`/project_members/${project_id}/${member_id}`).then(res => res.json()); // プロジェクトメンバー取得
+const getObjectivePrice = id => fetch(endpoint+`/objective_prices/${id}`).then(res => res.json()); // 価格取得
+const getPack = id => fetch(endpoint+`/packs/${id}`).then(res => res.json()); // パック取得
+const getImprovementIdea = id => fetch(endpoint+`/improvement_ideas/${id}`).then(res => res.json()); // 改善アイデア取得
+const getLink = id => fetch(endpoint+`/links/${id}`).then(res => res.json()); // リンク取得
 const createUser = data => fetch('/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // ユーザー作成
 const createProject = data => fetch('/projects', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // プロジェクト作成
 const createMember = data => fetch('/members', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // メンバー作成
-const createProjectMember = (project_id, data) => fetch(`/project_members/${project_id}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // プロジェクトメンバー作成
+const createProjectMember = (project_id, data) => fetch(endpoint+`/project_members/${project_id}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // プロジェクトメンバー作成
 const createObjectivePrice = data => fetch('/objective_prices', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // 価格作成
 const createPack = data => fetch('/packs', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // パック作成
 const createImprovementIdea = data => fetch('/improvement_ideas', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // 改善アイデア作成
 const createLink = data => fetch('/links', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // リンク作成
-const updateUser = (id, data) => fetch(`/users/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // ユーザー更新
-const updateProject = (id, data) => fetch(`/projects/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // プロジェクト更新
-const updateMember = (id, data) => fetch(`/members/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // メンバー更新
-const updateProjectMember = (project_id, member_id, data) => fetch(`/project_members/${project_id}/${member_id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // プロジェクトメンバー更新
-const updateObjectivePrice = (id, data) => fetch(`/objective_prices/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // 価格更新
-const updatePack = (id, data) => fetch(`/packs/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // パック更新
-const updateImprovementIdea = (id, data) => fetch(`/improvement_ideas/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // 改善アイデア更新
-const updateLink = (id, data) => fetch(`/links/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // リンク更新
-const deleteUser = id => fetch(`/users/${id}`, { method: 'DELETE' }).then(res => res.text()); // ユーザー削除
-const deleteProject = id => fetch(`/projects/${id}`, { method: 'DELETE' }).then(res => res.text()); // プロジェクト削除
-const deleteMember = id => fetch(`/members/${id}`, { method: 'DELETE' }).then(res => res.text()); // メンバー削除
-const deleteProjectMember = (project_id, member_id) => fetch(`/project_members/${project_id}/${member_id}`, { method: 'DELETE' }).then(res => res.text()); // プロジェクトメンバー削除
-const deleteObjectivePrice = id => fetch(`/objective_prices/${id}`, { method: 'DELETE' }).then(res => res.text()); // 価格削除
-const deletePack = id => fetch(`/packs/${id}`, { method: 'DELETE' }).then(res => res.text()); // パック削除
-const deleteImprovementIdea = id => fetch(`/improvement_ideas/${id}`, { method: 'DELETE' }).then(res => res.text()); // 改善アイデア削除
-const deleteLink = id => fetch(`/links/${id}`, { method: 'DELETE' }).then(res => res.text()); // リンク削
+const updateUser = (id, data) => fetch(endpoint+`/users/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // ユーザー更新
+const updateProject = (id, data) => fetch(endpoint+`/projects/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // プロジェクト更新
+const updateMember = (id, data) => fetch(endpoint+`/members/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // メンバー更新
+const updateProjectMember = (project_id, member_id, data) => fetch(endpoint+`/project_members/${project_id}/${member_id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // プロジェクトメンバー更新
+const updateObjectivePrice = (id, data) => fetch(endpoint+`/objective_prices/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // 価格更新
+const updatePack = (id, data) => fetch(endpoint+`/packs/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // パック更新
+const updateImprovementIdea = (id, data) => fetch(endpoint+`/improvement_ideas/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // 改善アイデア更新
+const updateLink = (id, data) => fetch(endpoint+`/links/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // リンク更新
+const deleteUser = id => fetch(endpoint+`/users/${id}`, { method: 'DELETE' }).then(res => res.text()); // ユーザー削除
+const deleteProject = id => fetch(endpoint+`/projects/${id}`, { method: 'DELETE' }).then(res => res.text()); // プロジェクト削除
+const deleteMember = id => fetch(endpoint+`/members/${id}`, { method: 'DELETE' }).then(res => res.text()); // メンバー削除
+const deleteProjectMember = (project_id, member_id) => fetch(endpoint+`/project_members/${project_id}/${member_id}`, { method: 'DELETE' }).then(res => res.text()); // プロジェクトメンバー削除
+const deleteObjectivePrice = id => fetch(endpoint+`/objective_prices/${id}`, { method: 'DELETE' }).then(res => res.text()); // 価格削除
+const deletePack = id => fetch(endpoint+`/packs/${id}`, { method: 'DELETE' }).then(res => res.text()); // パック削除
+const deleteImprovementIdea = id => fetch(endpoint+`/improvement_ideas/${id}`, { method: 'DELETE' }).then(res => res.text()); // 改善アイデア削除
+const deleteLink = id => fetch(endpoint+`/links/${id}`, { method: 'DELETE' }).then(res => res.text()); // リンク削
 return {getUser, getProject, getMember, getProjectMember, getObjectivePrice, getPack, getImprovementIdea, getLink, createUser, createProject, createMember, createProjectMember, createObjectivePrice, createPack, createImprovementIdea, createLink, updateUser, updateProject, updateMember, updateProjectMember, updateObjectivePrice, updatePack, updateImprovementIdea, updateLink, deleteUser, deleteProject, deleteMember, deleteProjectMember, deleteObjectivePrice, deletePack, deleteImprovementIdea, deleteLink};
 };
 
