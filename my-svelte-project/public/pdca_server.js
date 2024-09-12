@@ -61,17 +61,20 @@
 // 3. `objective_prices` が不正な値の場合：
 //    - エラー例: 「`objective_price` は 0 以上でなければなりません。」
 
-
-
 const express = require('express');
-const bodyParser = require('body-parser');
-const Database = require('better-sqlite3');
-
 const app = express();
+const bodyParser = require('body-parser');
 app.use(bodyParser.json());
+const cors = require('cors');
+app.use(cors());
+const port = 8000;
+app.listen(port, "0.0.0.0", () => console.log(`App listening!! at http://localhost:${port}`) );
+const sqlite = require('better-sqlite3');
+const crypto = require('crypto');
 
 // データベースの初期化
-const db_for_app7 = new Database('app7.db');
+const db_for_app7 = new sqlite('app7.db');
+
 
 app.post('/init_db', (req, res) => {
     try {
@@ -785,6 +788,3 @@ app.delete('/links/:id', (req, res) => {
     }
 });
 
-app.listen(8000, () => {
-    console.log('Server is running on http://localhost:3000');
-});
