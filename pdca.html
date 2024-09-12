@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDCA Management App</title>
+    <script src="./vue3.js"></script>
+    <script src="./lang.js"></script>
+    <style>
+        /* :class="{ done: pack[stage].done } */
+        /* 完了したステージはバックグラウンドが灰色に */
+        .done {
+            background-color: #f0f0f0;
+        }
+        .indent {
+            margin-left: 1em;
+        }
+
+
+    </style>
+</head>
+
+<body>
+    <header></header>
+    <div class="container" id="app">
+        <nav>
+            <button @click="setActiveTab('projects')">{{ languageData.projectManagement }}</button>
+            <button @click="setActiveTab('packs')">{{ languageData.packManagement }}</button>
+            <button @click="setActiveTab('progress')">{{ languageData.progressManagement }}</button>
+        </nav>
+
+        <!-- 言語設定 -->
+        <div class="language-select">
+            <span>{{ languageData.languageIcon }}</span>
+        </div>
+
+        <!-- プロジェクト管理タブ -->
+        <div v-if="activeTab === 'projects'">
+
+            <div>
+                <h2>{{ languageData.memberManage }}</h2>
+                <form @submit.prevent="addMember">
+                    <label for="name">{{ languageData.name }}</label>
+                    <input type="text" v-model="newMember.name" required minlength="1" maxlength="50" pattern="[a-zA-Z\s]+">
+                    <br>
+                    <label for="position">{{ languageData.position }}</label>
+                    <input type="text" v-model="newMember.position" maxlength="10" required>
+                    <br>
+                    <label for="link">{{ languageData.link }}</label>
+                    <input type="url" v-model="newMember.link" required pattern="https?://.+">
+                    <br>
+                    <button type="submit">{{ languageData.addMember }}</button>
+                </form>
+                <h2>{{ languageData.existingMembers }}</h2>
+                <ul>
+                    <li v-for="(member, index) in members" :key="index">
+                        {{ languageData.name }}: {{ member.name }}, {{ languageData.position }}: {{ member.position }}, {{ languageData.link }}: <a :href="member.link" target="_blank">{{ member.link }}</a>
+                        <button @click="removeMember(index)">{{ languageData.delete }}</button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- sampleProjectAndThePacks -->
+            <button @click="sampleProjectAndThePacks">sampleProjectAndThePacks</button>
+            <h2>{{ languageData.createProject }}</h2>
+            <input v-model="newProject.name" type="text" :placeholder="languageData.projectName" required minlength="1" maxlength="100">
+            <textarea v-model="newProject.description" :placeholder="languageData.projectDescription" required minlength="1" maxlength="500"></textarea>
+            <input v-model.number="newProject.kpi" type="number" :placeholder="languageData.projectKPI" min="0">
+            <input v-model.number="newProject.dueDate" type="number" :placeholder="languageData.projectDueDate" min="1">
+            <button @click="addProject">{{ languageData.addProject }}</button>
+
+            <h2>{{ languageData.existingProjects }}</h2>
+            <div>
+                <button @click="sortProjects('kpi', 'asc')">sortByKPIAsc</button>
+                <button @click="sortProjects('kpi', 'desc')">sortByKPIDesc</button>
+                <button @click="sortProjects('dueDate', 'asc')">sortByDueDateAsc</button>
+                <button @click="sortProjects('dueDate', 'desc')">sortByDueDateDesc</button>
+                <button @click="sortProjects('packCount', 'asc')">sortByPackCountAsc</button>
+                <button @click="sortProjects('packCount', 'desc')">sortByPackCountDesc</button>
+                <button @click="sortProjects('incompletePackCount', 'asc')">sortByIncompletePackCountAsc</button>
+                <button @click="sortProjects('incompletePackCount', 'desc')">sortByIncompletePackCountDesc</button>
+            </div>
+            <div class="project-list">
+                <div v-for="project in sortedProjects" :key="project.id" class="project">
+                    <!-- プロジェクトに価格を設定（目標価格と現在価格） -->
+                    <input v-model.number="project.current_price" type="number" :placeholder="languageData.current_price" min="0">
+                    {{ languageData.current_price }}: ${{ project.current_price }}
+                    <input v-model.number="project.target_price" type="number" :placeholder="languageData.target_price" min="0">
+                    {{ languageData.target_price }}: ${{ project.target_price }}
+                    <!-- add objective_price -->
+                    <button @click="addObjectivePrice(project.id)">addObjectivePrice</button>
+                    <ul>
+                        <li v-for="(price, index) in project.objective_prices" :key="index">
+                            <input v-model.number="price.objective_price" type="number" :placeholder="languageData.objective_price" min="0">
+                            {{ languageData.objective_price }}: ${{ price.objective_price }}
+                            <input v-model="price.price_description" type="text" :placeholder="languageData.priceDescription" maxlength="100">
+                            {{ languageData.priceDescription }}: {{ price.price_description }}
+                            <button @click="removeObjectivePrice(project.id, index)">remove</button>
+                        </li>
+                    </ul>
+
+                    <!-- addMemberToProjectOrPack -->
+                    <form @submit.prevent="addMemberToProjectOrPack(project.id, null, getSelectedMember())">
+                        <label for="member">{{ languageData.addMember }}</label>
+                        <select v-model="selectedMemberId">
+                            <option v-for="member in members" :value="member.id">{{ member.name }}</option>
+                        </select>
+                        <button type="submit">{{ languageData.add }}</button>
+                    </form>
+                    <!-- member一覧 -->
+                    <ul>
+                        <li v-for="(member, index) in project.members" :key="index">
+                            {{ languageData.name }}: {{ member.name }}, {{ languageData.position }}: {{ member.position }}, {{ languageData.link }}: <a :href="member.link" target="_blank">{{ member.link }}</a>
+                            <button @click="removeMemberFromProjectOrPack(project.id, null, member.id)">削除</button>
+                        </li>
+                    </ul>
+
+                    <h3>{{ project.name }}</h3>
+                    <p>{{ project.description }}</p>
+                    <p>KPI: {{ project.kpi }}</p>
+                    <p>Difficulty: <span class="stars">{{ '★'.repeat(project.difficulty) }}</span></p>
+                    <p>Due Date: {{ formatDate(project.dueDate) }}</p>
+                    <div class="progress-bar" :style="{ width: projectProgress(project) + '%' }">{{ projectProgress(project) }}%
+                        <span v-for="i in 10" :key="i" :class="{ filled: projectProgress(project) >= i * 10 }">{{ projectProgress(project) >= i * 10 ? '●' : '○' }}</span>
+                    </div>
+                    <div class="project-summary">
+                        <h4>{{ languageData.packsSummary }}</h4>
+                        <div v-for="pack in getPacksByProject(project.id)" :key="pack.id" class="pack-summary">
+                            <span v-for="(stage, index) in ['plan', 'do', 'check', 'act']" :key="index" :class="{ done: pack[stage].done }">{{ languageData[stage] }}: {{ pack[stage].description }}</span>
+                            <button @click="viewPacks(project.id)">{{ languageData.viewPacks }}</button>
+                            {{project.id}}
+                        </div>
+                    </div>
+                    <button @click="deleteProject(project.id)" class="delete">{{ languageData.delete }}</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- パック管理タブ -->
+        <div v-if="activeTab === 'packs'">
+            <h2>{{ languageData.createPack }}</h2>
+            <select v-model="newPack.projectId" required>
+                <option v-for="project in projects" :value="project.id">{{ project.name }}</option>
+            </select>
+
+            <div v-for="(stage, index) in ['plan', 'do', 'check', 'act']" :key="index">
+                <input v-model="newPack[stage].description" type="text" :placeholder="languageData[stage]" maxlength="100" required>
+                <label>
+                    <input type="checkbox" v-model="newPack[stage].done"> {{ languageData.done }}
+                </label>
+
+                <div class="links">
+                    <div v-for="(link, linkIndex) in newPack[stage].links" :key="linkIndex">
+                        <input v-model="link.name" type="text" :placeholder="languageData.linkName" maxlength="100" required>
+                        <input v-model="link.href" type="url" :placeholder="languageData.linkHref" required pattern="https?://.+">
+                        <select v-model="link.stars">
+                            <option v-for="i in 5" :value="i">{{ i }}</option>
+                        </select>
+                        <span class="stars">{{ '★'.repeat(link.stars) }}</span>
+                    </div>
+                    <button @click="addLink(stage)">{{ languageData.addLink }}</button>
+                </div>                
+            </div>
+            <!-- 期日日時の入力フィールドを追加 -->
+            <input v-model.number="newPack.dueDate" type="number" :placeholder="languageData.dueDate" min="1" required>
+
+            <button @click="addPack">{{ languageData.addPack }}</button>
+            <h2>{{ languageData.existingPacks }}</h2>
+            <div class="pack-list">
+                <div v-for="pack in packs" :key="pack.id" class="pack">
+                    <h3>{{ pack.name }}</h3>
+                    <div v-for="(stage, index) in ['plan', 'do', 'check', 'act']" :key="index">
+                        <p>{{ languageData[stage] }}: {{ stage.description }}</p>
+                        <div v-for="(link, linkIndex) in stage.links" :key="linkIndex">
+                            <a :href="link.href" target="_blank">{{ link.name }}</a>
+                            <span class="stars">{{ '★'.repeat(link.stars) }}</span>
+                        </div>
+                    </div>
+                    <button @click="deletePack(pack.id)" class="delete">{{ languageData.delete }}</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 進捗管理タブ -->
+        <div v-if="activeTab === 'progress'">
+            <h2>{{ languageData.progressReport }}</h2>
+            <!-- Progress Report Content -->
+        </div>
+    </div>
+    <footer></footer>
+</body>
+
+
+<script>
+    function to_ary(obj) {
+        return JSON.parse(JSON.stringify(obj));
+    }
+
+    const app = Vue.createApp({
+        data() {
+            return {
+                uid: '',
+                new_improvement_idea: 'sample idea',
+                idea_link_desc: '',
+                idea_link: '',
+                improvement_idea: {
+                    id: null,
+                    packId: null,
+                    type: 'immediate', // immediate or non-immediate
+                    description: '',
+                    links: []
+                },
+                selectedMemberId: '',
+                activeTab: 'projects',
+                languageData: {},  // To be populated with translations
+                newProject: {
+                    name: '',
+                    description: '',
+                    kpi: 0,
+                    dueDate: 96,  // Default due date
+                    difficulty: 3,
+                    members_ids: [],
+                    target_price: 0,
+                    current_price: 0,
+                    objective_prices: [{objective_price: 0, price_description: ''},],
+                },
+                newPack: {
+                    projectId: null,
+                    plan: { description: '', done: false, links: [] },
+                    do: { description: '', done: false, links: [] },
+                    check: { description: '', done: false, links: [] },
+                    act: { description: '', done: false, links: [] },
+                    dueDate: '2023-12-01T00:00:00Z',
+                    members_ids: [],
+                    improvement_ideas: [],
+                },
+                projects: [],
+                packs: [],
+                sortDirection: {
+                    projects: 'asc',
+                    packs: 'asc'
+                },
+                editPackId: null,
+                editPackData: null,
+                newMember: {
+                    name: '',
+                    position: '',
+                    link: ''
+                },
+                members: []
+            }
+        },
+        // mounted
+        async mounted() {
+            this.languageData = lang;
+            // this.sampleProjectAndThePacks();
+        },
+        async created() {
+            this.languageData = lang;
+        },
+        computed: {
+            sortedProjects() {
+                return this.projects.sort((a, b) => {
+                    const direction = this.sortDirection.projects === 'asc' ? 1 : -1;
+                    return a.name.localeCompare(b.name) * direction;
+                });
+            },
+            sortedPacks() {
+                return this.packs.sort((a, b) => {
+                    const direction = this.sortDirection.packs === 'asc' ? 1 : -1;
+                    return (a.id - b.id) * direction;
+                });
+            }
+        },
+        methods: {
+            getSelectedMember() {
+                return this.members.find(member => member.id === this.selectedMemberId);
+            },
+            addMember() {
+                if (this.newMember.position.length > 10) {
+                    alert('役職は10文字以下にしてください。');
+                    return;
+                }
+                this.members.push({ ...this.newMember });
+                this.newMember.id = '';
+                this.newMember.name = '';
+                this.newMember.position = '';
+                this.newMember.link = '';
+            },
+            removeMember(index) {
+                this.members.splice(index, 1);
+            },
+            addMemberToProjectOrPack(projectId, packId, member) {
+                const project = this.projects.find(p => p.id === projectId);
+                if (project) {
+                    if (packId) {
+                        const pack = project.packs.find(p => p.id === packId);
+                        if (pack) {
+                            pack.members = pack.members || [];
+                            pack.members.push(member);
+                        }
+                    } else {
+                        project.members = project.members || [];
+                        project.members.push(member);
+                    }
+                }
+            },
+            removeMemberFromProjectOrPack(projectId, packId, memberId) {
+                const project = this.projects.find(p => p.id === projectId);
+                if (project) {
+                    if (packId) {
+                        const pack = project.packs.find(p => p.id === packId);
+                        if (pack) {
+                            pack.members = pack.members || [];
+                            pack.members = pack.members.filter(m => m.id !== memberId);
+                        }
+                    } else {
+                        project.members = project.members || [];
+                        project.members = project.members.filter(m => m.id !== memberId);
+                    }
+                }
+            },
+            setActiveTab(tab) {
+                this.activeTab = tab;
+            },
+            formatDate(hours) {
+                const date = new Date();
+                date.setHours(date.getHours() + hours);
+                return date.toLocaleString();
+            },
+            formatProgress(pack) {
+                // Format progress display for packs
+                return `${pack.plan.description} | ${pack.do.description} | ${pack.check.description} | ${pack.act.description}`;
+            },
+            getPacksByProject(projectId) {
+                return this.packs.filter(pack => pack.projectId === projectId);
+            },
+            getProjectName(projectId) {
+                const project = this.projects.find(p => p.id === projectId);
+                return project ? project.name : '';
+            },
+            addProject() {
+                const newProject = { ...this.newProject, id: Date.now() };
+                this.projects.push(newProject);
+                this.newProject = { name: '', description: '', kpi: 0, dueDate: 96, difficulty: 3 };
+            },
+            deleteProject(id) {
+                this.projects = this.projects.filter(project => project.id !== id);
+            },
+            addPack() {
+                const newPack = { ...this.newPack, id: Date.now() };
+                this.packs.push(newPack);
+                this.newPack = { projectId: null, plan: { description: '', done: false, links: [] }, do: { description: '', done: false, links: [] }, check: { description: '', done: false, links: [] }, act: { description: '', done: false, links: [] } };
+            },
+            deletePack(id) {
+                this.packs = this.packs.filter(pack => pack.id !== id);
+            },
+            addLink(stage) {
+                this.newPack[stage].links.push({ name: '', href: '', stars: 3 });
+            },
+            postToTwitter(type) {
+                alert(`${type} posted to Twitter!`);
+            },
+            changeLanguage(language) {
+                // Change language setting (though it defaults to English in this version)
+                this.languageData = lang;
+            },
+            projectProgress(project) {
+                const packs = this.getPacksByProject(project.id);
+                const totalPacks = packs.length;
+                const completedPacks = packs.filter(pack => pack.plan.done && pack.do.done && pack.check.done && pack.act.done).length;
+                return totalPacks === 0 ? 0 : Math.round((completedPacks / totalPacks) * 100);
+            },
+            sortProjects(criteria, direction) {
+                this.sortDirection.projects = direction;
+                if (criteria === 'kpi') {
+                    this.projects.sort((a, b) => (this.projectProgress(b) - this.projectProgress(a)) * (direction === 'asc' ? 1 : -1));
+                } else if (criteria === 'dueDate') {
+                    this.projects.sort((a, b) => (a.dueDate - b.dueDate) * (direction === 'asc' ? 1 : -1));
+                } else if (criteria === 'packCount') {
+                    this.projects.sort((a, b) => (this.getPacksByProject(b.id).length - this.getPacksByProject(a.id).length) * (direction === 'asc' ? 1 : -1));
+                } else if (criteria === 'incompletePackCount') {
+                    this.projects.sort((a, b) => {
+                        const incompletePacksA = this.getPacksByProject(a.id).filter(pack => !pack.plan.done || !pack.do.done || !pack.check.done || !pack.act.done).length;
+                        const incompletePacksB = this.getPacksByProject(b.id).filter(pack => !pack.plan.done || !pack.do.done || !pack.check.done || !pack.act.done).length;
+                        return (incompletePacksB - incompletePacksA) * (direction === 'asc' ? 1 : -1);
+                    });
+                }
+            },
+            sortPacks(criteria, direction) {
+                this.sortDirection.packs = direction;
+                if (criteria === 'pdca') {
+                    this.packs.sort((a, b) => {
+                        const progressA = this.packProgress(a);
+                        const progressB = this.packProgress(b);
+                        return (progressA - progressB) * (direction === 'asc' ? 1 : -1);
+                    });
+                } else if (criteria === 'dueDate') {
+                    this.packs.sort((a, b) => (a.dueDate - b.dueDate) * (direction === 'asc' ? 1 : -1));
+                } else if (criteria === 'stars') {
+                    this.packs.sort((a, b) => {
+                        const starsA = this.totalStars(a);
+                        const starsB = this.totalStars(b);
+                        return (starsA - starsB) * (direction === 'asc' ? 1 : -1);
+                    });
+                } else if (criteria === 'kpi') {
+                    this.packs.sort((a, b) => (a.kpi - b.kpi) * (direction === 'asc' ? 1 : -1));
+                }
+            },
+            packProgress(pack) {
+                const stages = ['plan', 'do', 'check', 'act'];
+                const completedStages = stages.filter(stage => pack[stage].done).length;
+                return (completedStages / stages.length) * 100;
+            },
+            totalStars(pack) {
+                const stages = ['plan', 'do', 'check', 'act'];
+                return stages.reduce((total, stage) => {
+                    return total + pack[stage].links.reduce((sum, link) => sum + link.stars, 0);
+                }, 0);
+            },
+            viewPacks(projectId) {
+                this.setActiveTab('packs');
+                this.newPack.projectId = projectId;
+            },
+            sampleProjectAndThePacks() {
+this.uid = 'sample_uid';
+
+this.projects = [
+{ id: 1, name: 'Project 1', description: 'Description 1', kpi: 80, dueDate: 96, difficulty: 3, members: [], objective_prices: [{objective_price: 0, price_description: 'any reason 1'},], }, 
+{ id: 2, name: 'Project 2', description: 'Description 2', kpi: 60, dueDate: 72, difficulty: 2, members: [], objective_prices: [{objective_price: 0, price_description: 'any reason 2'},], },
+{ id: 3, name: 'Project 3', description: 'Description 3', kpi: 40, dueDate: 48, difficulty: 1, members: [], objective_prices: [{objective_price: 0, price_description: 'any reason 3'},], }
+];
+
+this.packs = [
+{ id: 1, projectId: 1, plan: { description: 'Plan 1', done: true, links: [{ name: 'Link 1', href: 'https://example.com', stars: 3 }] }, do: { description: 'Do 1', done: false, links: [] }, check: { description: 'Check 1', done: false, links: [] }, act: { description: 'Act 1', done: false, links: [] }, dueDate: '2023-12-01T00:00:00Z', improvement_ideas: [] },
+{ id: 2, projectId: 1, plan: { description: 'Plan 2', done: true, links: [] }, do: { description: 'Do 2', done: true, links: [] }, check: { description: 'Check 2', done: false, links: [] }, act: { description: 'Act 2', done: false, links: [] }, dueDate: '2023-12-05T00:00:00Z', improvement_ideas: [] },
+{ id: 3, projectId: 2, plan: { description: 'Plan 3', done: true, links: [] }, do: { description: 'Do 3', done: true, links: [] }, check: { description: 'Check 3', done: true, links: [] }, act: { description: 'Act 3', done: true, links: [] }, dueDate: '2023-12-10T00:00:00Z', improvement_ideas: [] },
+{ id: 4, projectId: 2, plan: { description: 'Plan 4', done: true, links: [] }, do: { description: 'Do 4', done: true, links: [] }, check: { description: 'Check 4', done: true, links: [] }, act: { description: 'Act 4', done: false, links: [] }, dueDate: '2023-12-15T00:00:00Z', improvement_ideas: [] },
+{ id: 5, projectId: 3, plan: { description: 'Plan 5', done: true, links: [] }, do: { description: 'Do 5', done: true, links: [] }, check: { description: 'Check 5', done: false, links: [] }, act: { description: 'Act 5', done: false, links: [] }, dueDate: '2023-12-20T00:00:00Z', improvement_ideas: [] },
+{ id: 6, projectId: 3, plan: { description: 'Plan 6', done: true, links: [] }, do: { description: 'Do 6', done: true, links: [] }, check: { description: 'Check 6', done: true, links: [] }, act: { description: 'Act 6', done: false, links: [] }, dueDate: '2023-12-25T00:00:00Z', improvement_ideas: [] }
+];
+// improvement_ideaのサンプルデータ
+this.packs[0].improvement_ideas = [
+{ id: 1, packId: 1, type: 'immediate', description: 'Immediate Improvement Idea 1', links: [{ url: 'https://example.com', description: 'Link 1' }] },
+{ id: 2, packId: 1, type: 'non-immediate', description: 'Non-Immediate Improvement Idea 1', links: [{ url: 'https://example.com', description: 'Link 1' }] }
+];
+this.packs[1].improvement_ideas = [
+{ id: 3, packId: 2, type: 'immediate', description: 'Immediate Improvement Idea 2', links: [{ url: 'https://example.com', description: 'Link 1' }] },
+{ id: 4, packId: 2, type: 'non-immediate', description: 'Non-Immediate Improvement Idea 2', links: [{ url: 'https://example.com', description: 'Link 1' }] }
+];
+// packs4,5には存在せず、3と6には存在
+this.packs[3].improvement_ideas = [
+{ id: 5, packId: 3, type: 'immediate', description: 'Immediate Improvement Idea 3', links: [{ url: 'https://example.com', description: 'Link 1' }] },
+{ id: 6, packId: 3, type: 'non-immediate', description: 'Non-Immediate Improvement Idea 3', links: [{ url: 'https://example.com', description: 'Link 1' }] }
+];
+this.packs[5].improvement_ideas = [
+{ id: 7, packId: 6, type: 'immediate', description: 'Immediate Improvement Idea 4', links: [{ url: 'https://example.com', description: 'Link 1' }] },
+{ id: 8, packId: 6, type: 'non-immediate', description: 'Non-Immediate Improvement Idea 4', links: [{ url: 'https://example.com', description: 'Link 1' }] }
+];
+// メンバーのサンプルデータ
+this.members = [
+{ id: 1, name: 'Member 1', position: 'Position 1', link: 'https://example.com' },
+{ id: 2, name: 'Member 2', position: 'Position 2', link: 'https://example.com' },
+{ id: 3, name: 'Member 3', position: 'Position 3', link: 'https://example.com' }
+];
+// メンバー追加のサンプルデータ
+this.projects[0].members = [this.members[0], this.members[1]];
+this.projects[1].members = [this.members[1], this.members[2]];
+this.projects[2].members = [this.members[0], this.members[2]];
+// priceのサンプルデータ
+this.projects[0].objective_prices = [
+{ objective_price: 0, price_description: 'any reason 1' },
+{ objective_price: 10, price_description: 'any reason 2' },
+{ objective_price: 20, price_description: 'any reason 3' }
+];
+this.projects[1].objective_prices = [
+{ objective_price: 0, price_description: 'any reason 1' },
+{ objective_price: 100, price_description: 'any reason 2' },
+{ objective_price: 5, price_description: 'any reason 3' }
+];
+// current priceのサンプルデータ
+this.projects[0].current_price = 0;
+this.projects[1].current_price = 5;
+this.projects[2].current_price = 0;
+// target priceのサンプルデータ
+this.projects[0].target_price = 10;
+this.projects[1].target_price = 100;
+this.projects[2].target_price = 20;
+
+            },
+            // パックの完了・未完了を切り替える
+            done_or_undone(pack, stage) {
+                // 指定したパックの指定したステージの完了・未完了を切り替える
+                pack[stage].done = !pack[stage].done;
+                // パックの完了度を計算
+                const progress = this.packProgress(pack);
+                // パックの完了度が100%になったら、プロジェクトの進捗を更新
+                if (progress === 100) {
+                    const project = this.projects.find(p => p.id === pack.projectId);
+                    project.difficulty = Math.max(1, project.difficulty - 1);
+                }
+                // パックの完了度が0%になったら、プロジェクトの進捗を更新
+                if (progress === 0) {
+                    const project = this.projects.find(p => p.id === pack.projectId);
+                    project.difficulty = Math.min(5, project.difficulty + 1);
+                }
+            },
+            editPack(packId) {
+                // パックのIDを取得
+                this.editPackId = packId;
+                // パックの情報を取得
+                this.editPackData = this.packs.find(pack => pack.id === packId);
+                // edit-pack-idにスクロール
+                document.getElementById('edit-pack-id').scrollIntoView();
+            },
+            updatePack() {
+                // パックの情報を更新
+                const packIndex = this.packs.findIndex(pack => pack.id === this.editPackId);
+                this.packs[packIndex] = this.editPackData;
+                // パックの編集フォームを閉じる
+                this.editPackId = null;
+            },
+//                 以下を実装するための関数
+// 6_1. 改善案ボタンの追加
+// 6_1_1. PDCAそれぞれに改善案を0以上追加可能
+// 6_1_2. 改善案のタイプは即時と非即時の2種類
+// 6_1_3. 改善案に最大5つのリンクを追加可能
+// 6_1_4. リンクには0文字以上100文字以下の補足を追加可能
+addImprovementIdea(packId) {
+  const newIdea = {
+    id: Date.now(),
+    packId,
+    type: 'immediate',
+    description: this.new_improvement_idea,
+    links: []
+  };
+  const packIndex = this.packs.findIndex(pack => pack.id === packId);
+  this.packs[packIndex].improvement_ideas.push(newIdea);
+},
+removeImprovementIdea(packId, ideaId) {
+  const packIndex = this.packs.findIndex(pack => pack.id === packId);
+  this.packs[packIndex].improvement_ideas = this.packs[packIndex].improvement_ideas.filter(idea => idea.id !== ideaId);
+},
+addImprovementIdeaLink(packId, ideaId, idea_link, idea_link_desc) {
+    // packId, ideaId, idea_link, idea_link_descチェック。エラーならアラート
+    if(!packId || !ideaId || !idea_link || !idea_link_desc) {
+        alert('packId, ideaId, idea_link, idea_link_descは必須です。');
+        return;
+    }
+  const packIndex = this.packs.findIndex(pack => pack.id === packId);
+  const ideaIndex = this.packs[packIndex].improvement_ideas.findIndex(idea => idea.id === ideaId);
+  if (this.packs[packIndex].improvement_ideas[ideaIndex].links.length < 5) {
+    this.packs[packIndex].improvement_ideas[ideaIndex].links.push({ url: idea_link, description: idea_link_desc });
+  } else {
+    alert('リンクは最大5つまで追加可能です。');
+  }
+},
+removeImprovementIdeaLink(packId, ideaId, linkIndex) {
+  const packIndex = this.packs.findIndex(pack => pack.id === packId);
+  const ideaIndex = this.packs[packIndex].improvement_ideas.findIndex(idea => idea.id === ideaId);
+  this.packs[packIndex].improvement_ideas[ideaIndex].links.splice(linkIndex, 1);
+},
+toggleImprovementIdea(packId) {
+    // show_imporve_idea
+    const packIndex = this.packs.findIndex(pack => pack.id === packId);
+    this.packs[packIndex].show_imporve_idea = !this.packs[packIndex].show_imporve_idea;
+},
+addObjectivePrice(projectId) {
+        const projectIndex = this.projects.findIndex(project => project.id === projectId);
+        this.projects[projectIndex].objective_prices.push({ objective_price: 0, price_description: '' });
+},
+removeObjectivePrice(projectId, index) {
+    const projectIndex = this.projects.findIndex(project => project.id === projectId);
+    this.projects[projectIndex].objective_prices.splice(index, 1);
+},
+
+
+    
+
+
+
+        }
+    }).mount('#app');
+</script>
+
+</html>
