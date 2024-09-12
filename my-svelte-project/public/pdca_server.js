@@ -1,3 +1,68 @@
+// このサンプルデータを基に、プロジェクトやパック、改善案、メンバー、価格に対するバリデーションルールを策定します。以下に各項目ごとのバリデーションルールを示します。
+
+// - **`id`**: 整数で、重複がないこと。
+// - **`name`**: 1文字以上50文字以下であること。空欄禁止。
+// - **`description`**: 1文字以上300文字以下であること。
+// - **`kpi`**: 0以上100以下の数値。
+// - **`dueDate`**: プロジェクトの締め切りまでの期間（時間単位）。0以上であること。
+// - **`difficulty`**: 1～5の範囲であること。
+// - **`members`**: プロジェクトには1人以上のメンバーが必要。メンバーは重複してはいけない。
+// - **`objective_prices`**:
+//     - **`objective_price`**: 0以上の整数。
+//     - **`price_description`**: 1文字以上100文字以下であること。
+// - **`current_price`**: `objective_prices`の範囲内にあること。
+// - **`target_price`**: `objective_prices`の範囲内にあること。
+
+// - `current_price`や`target_price`が`objective_prices`の範囲外の場合、エラーメッセージを返す。
+
+
+// - **`id`**: 整数で、重複がないこと。
+// - **`projectId`**: 存在するプロジェクトIDであること。
+// - **`plan`, `do`, `check`, `act`**:
+//     - **`description`**: 1文字以上300文字以下であること。
+//     - **`done`**: ブール値（`true` または `false`）。
+//     - **`links`**: 
+//         - **`name`**: 1文字以上50文字以下。
+//         - **`href`**: 有効なURLであること。
+//         - **`stars`**: 1～5の範囲の整数。
+// - **`dueDate`**: 現在の日時より未来の日付であること。
+// - **`improvement_ideas`**:
+//     - **`id`**: 整数で、重複がないこと。
+//     - **`packId`**: 既存のパックIDと一致すること。
+//     - **`type`**: `'immediate'` または `'non-immediate'` のみを許可。
+//     - **`description`**: 1文字以上300文字以下であること。
+//     - **`links`**:
+//         - **`url`**: 有効なURLであること。
+//         - **`description`**: 1文字以上100文字以下。
+
+// - `dueDate`が過去の日付の場合、バリデーションエラーを返す。
+// - `improvement_ideas` の`packId`が正しくない場合エラーメッセージを表示。
+
+
+// - **`id`**: 整数で、重複がないこと。
+// - **`name`**: 1文字以上50文字以下であること。空欄禁止。
+// - **`position`**: 1文字以上50文字以下であること。空欄禁止。
+// - **`link`**: 有効なURLであること。
+
+
+// - **`objective_price`**: 0以上の整数であること。
+// - **`price_description`**: 1文字以上100文字以下であること。
+// - **`current_price`, `target_price`**:
+//     - **`current_price`**は `objective_prices` 内に含まれている値であること。
+//     - **`target_price`**は `objective_prices` 内に含まれている値であること。
+
+
+// 1. プロジェクトが `kpi` の範囲外の場合：
+//    - エラー例: 「`kpi` は 0 以上 100 以下の範囲でなければなりません。」
+
+// 2. `dueDate` が過去の日付の場合：
+//    - エラー例: 「`dueDate` は現在の日付より未来の日付である必要があります。」
+
+// 3. `objective_prices` が不正な値の場合：
+//    - エラー例: 「`objective_price` は 0 以上でなければなりません。」
+
+
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const Database = require('better-sqlite3');
@@ -5,9 +70,6 @@ const Database = require('better-sqlite3');
 const app = express();
 app.use(bodyParser.json());
 
-const express = require('express');
-const bodyParser = require('body-parser');
-const Database = require('better-sqlite3');
 
 // データベースの初期化
 const db_for_app7 = new Database('app7.db');
