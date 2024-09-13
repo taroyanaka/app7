@@ -105,7 +105,6 @@ app.get('/users/:id/projects', (req, res) => {
     }
 });
 
-
 app.post('/init_db', (req, res) => {
     try {
         db_for_app7.exec('DROP TABLE IF EXISTS users');
@@ -230,6 +229,99 @@ app.post('/init_db', (req, res) => {
         res.status(500).send('Internal server error');
     }
 });
+
+
+// それぞれのテーブルに新規データを追加するエンドポイントをそれぞれ5行で作成します。(テーブルの数だけ生成)
+// users
+app.post('/insert_users', (req, res) => {
+    try { if (!req.body.uid || !req.body.name || !req.body.email) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO users (uid, name, email) VALUES (?, ?, ?)').run(req.body.uid, req.body.name, req.body.email).lastInsertRowid });
+    } catch (error) { console.error('Error creating user:', error); res.status(500).send('Internal server error'); }
+});
+// projects
+app.post('/insert_projects', (req, res) => {
+    try { if (!req.body.user_id || !req.body.name) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO projects (user_id, name, description, kpi, due_date, difficulty, current_price, target_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(req.body.user_id, req.body.name, req.body.description, req.body.kpi, req.body.due_date, req.body.difficulty, req.body.current_price, req.body.target_price).lastInsertRowid });
+    } catch (error) { console.error('Error creating project:', error); res.status(500).send('Internal server error'); }
+});
+// members
+app.post('/insert_members', (req, res) => {
+    try { if (!req.body.name) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO members (name, position, link) VALUES (?, ?, ?)').run(req.body.name, req.body.position, req.body.link).lastInsertRowid });
+    } catch (error) { console.error('Error creating member:', error); res.status(500).send('Internal server error'); }
+});
+// project_members
+app.post('/insert_project_members', (req, res) => {
+    try { if (!req.body.project_id || !req.body.member_id) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO project_members (project_id, member_id) VALUES (?, ?)').run(req.body.project_id, req.body.member_id).lastInsertRowid });
+    } catch (error) { console.error('Error creating project_member:', error); res.status(500).send('Internal server error'); }
+});
+// objective_prices
+app.post('/insert_objective_prices', (req, res) => {
+    try { if (!req.body.project_id || req.body.objective_price === undefined) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO objective_prices (project_id, objective_price, price_description) VALUES (?, ?, ?)').run(req.body.project_id, req.body.objective_price, req.body.price_description).lastInsertRowid });
+    } catch (error) { console.error('Error creating objective_price:', error); res.status(500).send('Internal server error'); }
+});
+// packs
+app.post('/insert_packs', (req, res) => {
+    try { if (!req.body.project_id) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO packs (project_id, plan_description, plan_done, do_description, do_done, check_description, check_done, act_description, act_done, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(req.body.project_id, req.body.plan_description, req.body.plan_done, req.body.do_description, req.body.do_done, req.body.check_description, req.body.check_done, req.body.act_description, req.body.act_done, req.body.due_date).lastInsertRowid });
+    } catch (error) { console.error('Error creating pack:', error); res.status(500).send('Internal server error'); }
+});
+// improvement_ideas
+app.post('/insert_improvement_ideas', (req, res) => {
+    try { if (!req.body.pack_id || !req.body.type || !req.body.description) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO improvement_ideas (pack_id, type, description) VALUES (?, ?, ?)').run(req.body.pack_id, req.body.type, req.body.description).lastInsertRowid });
+    } catch (error) { console.error('Error creating improvement_idea:', error); res.status(500).send('Internal server error'); }
+});
+// links
+app.post('/insert_links', (req, res) => {
+    try { if (!req.body.pack_id || !req.body.url) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO links (pack_id, improvement_idea_id, url, description) VALUES (?, ?, ?, ?)').run(req.body.pack_id, req.body.improvement_idea_id, req.body.url, req.body.description).lastInsertRowid });
+    } catch (error) { console.error('Error creating link:', error); res.status(500).send('Internal server error'); }
+});
+
+// それぞれのテーブルにリレーションするデータを追加するエンドポイントをそれぞれ5行で作成します。(テーブルの数だけ生成)
+// project_members
+app.post('/insert_project_members', (req, res) => {
+    try { if (!req.body.project_id || !req.body.member_id) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO project_members (project_id, member_id) VALUES (?, ?)').run(req.body.project_id, req.body.member_id).lastInsertRowid });
+    } catch (error) { console.error('Error creating project_member:', error); res.status(500).send('Internal server error'); }
+});
+// objective_prices
+app.post('/insert_objective_prices', (req, res) => {
+    try { if (!req.body.project_id || req.body.objective_price === undefined) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO objective_prices (project_id, objective_price, price_description) VALUES (?, ?, ?)').run(req.body.project_id, req.body.objective_price, req.body.price_description).lastInsertRowid });
+    } catch (error) { console.error('Error creating objective_price:', error); res.status(500).send('Internal server error'); }
+});
+// packs
+app.post('/insert_packs', (req, res) => {
+    try { if (!req.body.project_id) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO packs (project_id, plan_description, plan_done, do_description, do_done, check_description, check_done, act_description, act_done, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(req.body.project_id, req.body.plan_description, req.body.plan_done, req.body.do_description, req.body.do_done, req.body.check_description, req.body.check_done, req.body.act_description, req.body.act_done, req.body.due_date).lastInsertRowid });
+    } catch (error) { console.error('Error creating pack:', error); res.status(500).send('Internal server error'); }
+});
+// improvement_ideas
+app.post('/insert_improvement_ideas', (req, res) => {
+    try { if (!req.body.pack_id || !req.body.type || !req.body.description) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO improvement_ideas (pack_id, type, description) VALUES (?, ?, ?)').run(req.body.pack_id, req.body.type, req.body.description).lastInsertRowid });
+    } catch (error) { console.error('Error creating improvement_idea:', error); res.status(500).send('Internal server error'); }
+});
+// links
+app.post('/insert_links', (req, res) => {
+    try { if (!req.body.pack_id || !req.body.url) return res.status(400).send('Invalid input');
+        res.status(201).json({ id: db_for_app7.prepare('INSERT INTO links (pack_id, improvement_idea_id, url, description) VALUES (?, ?, ?, ?)').run(req.body.pack_id, req.body.improvement_idea_id, req.body.url, req.body.description).lastInsertRowid });
+    } catch (error) { console.error('Error creating link:', error); res.status(500).send('Internal server error'); }
+});
+
+
+
+
+
+
+
+
+
+
 
 // CRUD エンドポイントの定義
 
