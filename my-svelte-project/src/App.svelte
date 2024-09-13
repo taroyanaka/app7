@@ -103,7 +103,7 @@
     onMount(() => {
         // This can replace the "mounted" or "created" lifecycle hooks
         // languageData = lang;
-        sampleProjectAndThePacks();
+        // sampleProjectAndThePacks();
     });
 
     // Computed-like reactive functions
@@ -347,47 +347,275 @@
         projects[2].target_price = 20;
     }
 
-const all_fetch_fn = () => {
+
+
+
+// Define the endpoint for API requests
 // const endpoint = "https://cotton-concrete-catsup.glitch.me";
 const endpoint = "http://localhost:8000";
-// データベース初期化
-const initDb = () => fetch(endpoint+'/init_db', { method: 'POST' }).then(res => res.text());
-const getUser = id => fetch(endpoint+`/users/${id}`).then(res => res.json()); // ユーザー取得
-const getProject = id => fetch(endpoint+`/projects/${id}`).then(res => res.json()); // プロジェクト取得
-const getMember = id => fetch(endpoint+`/members/${id}`).then(res => res.json()); // メンバー取得
-const getProjectMember = (project_id, member_id) => fetch(endpoint+`/project_members/${project_id}/${member_id}`).then(res => res.json()); // プロジェクトメンバー取得
-const getObjectivePrice = id => fetch(endpoint+`/objective_prices/${id}`).then(res => res.json()); // 価格取得
-const getPack = id => fetch(endpoint+`/packs/${id}`).then(res => res.json()); // パック取得
-const getImprovementIdea = id => fetch(endpoint+`/improvement_ideas/${id}`).then(res => res.json()); // 改善アイデア取得
-const getLink = id => fetch(endpoint+`/links/${id}`).then(res => res.json()); // リンク取得
-const createUser = data => fetch('/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // ユーザー作成
-const createProject = data => fetch('/projects', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // プロジェクト作成
-const createMember = data => fetch('/members', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // メンバー作成
-const createProjectMember = (project_id, data) => fetch(endpoint+`/project_members/${project_id}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // プロジェクトメンバー作成
-const createObjectivePrice = data => fetch('/objective_prices', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // 価格作成
-const createPack = data => fetch('/packs', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // パック作成
-const createImprovementIdea = data => fetch('/improvement_ideas', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // 改善アイデア作成
-const createLink = data => fetch('/links', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // リンク作成
-const updateUser = (id, data) => fetch(endpoint+`/users/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // ユーザー更新
-const updateProject = (id, data) => fetch(endpoint+`/projects/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // プロジェクト更新
-const updateMember = (id, data) => fetch(endpoint+`/members/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // メンバー更新
-const updateProjectMember = (project_id, member_id, data) => fetch(endpoint+`/project_members/${project_id}/${member_id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // プロジェクトメンバー更新
-const updateObjectivePrice = (id, data) => fetch(endpoint+`/objective_prices/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // 価格更新
-const updatePack = (id, data) => fetch(endpoint+`/packs/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // パック更新
-const updateImprovementIdea = (id, data) => fetch(endpoint+`/improvement_ideas/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // 改善アイデア更新
-const updateLink = (id, data) => fetch(endpoint+`/links/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()); // リンク更新
-const deleteUser = id => fetch(endpoint+`/users/${id}`, { method: 'DELETE' }).then(res => res.text()); // ユーザー削除
-const deleteProject = id => fetch(endpoint+`/projects/${id}`, { method: 'DELETE' }).then(res => res.text()); // プロジェクト削除
-const deleteMember = id => fetch(endpoint+`/members/${id}`, { method: 'DELETE' }).then(res => res.text()); // メンバー削除
-const deleteProjectMember = (project_id, member_id) => fetch(endpoint+`/project_members/${project_id}/${member_id}`, { method: 'DELETE' }).then(res => res.text()); // プロジェクトメンバー削除
-const deleteObjectivePrice = id => fetch(endpoint+`/objective_prices/${id}`, { method: 'DELETE' }).then(res => res.text()); // 価格削除
-const deletePack = id => fetch(endpoint+`/packs/${id}`, { method: 'DELETE' }).then(res => res.text()); // パック削除
-const deleteImprovementIdea = id => fetch(endpoint+`/improvement_ideas/${id}`, { method: 'DELETE' }).then(res => res.text()); // 改善アイデア削除
-const deleteLink = id => fetch(endpoint+`/links/${id}`, { method: 'DELETE' }).then(res => res.text()); // リンク削
-return {initDb, getUser, getProject, getMember, getProjectMember, getObjectivePrice, getPack, getImprovementIdea, getLink, createUser, createProject, createMember, createProjectMember, createObjectivePrice, createPack, createImprovementIdea, createLink, updateUser, updateProject, updateMember, updateProjectMember, updateObjectivePrice, updatePack, updateImprovementIdea, updateLink, deleteUser, deleteProject, deleteMember, deleteProjectMember, deleteObjectivePrice, deletePack, deleteImprovementIdea, deleteLink};
+
+// Array to store errors
+const errors = [];
+
+const fetch_init_db = async () => {
+    try { return await (await fetch(endpoint + '/init_db', { method: 'POST' })).text(); } 
+    catch (error) { errors.push(`Init DB error: ${error.message}`); console.error(error); }
 };
 
+const fetch_get_user = async id => {
+    try { return await (await fetch(endpoint + `/users/${id}`)).json(); } 
+    catch (error) { errors.push(`Get user error: ${error.message}`); console.error(error); }
+};
+const fetch_get_project = async id => {
+    try { return await (await fetch(endpoint + `/projects/${id}`)).json(); } 
+    catch (error) { errors.push(`Get project error: ${error.message}`); console.error(error); }
+};
+const fetch_get_member = async id => {
+    try { return await (await fetch(endpoint + `/members/${id}`)).json(); } 
+    catch (error) { errors.push(`Get member error: ${error.message}`); console.error(error); }
+};
+const fetch_get_project_member = async (project_id, member_id) => {
+    try { return await (await fetch(endpoint + `/project_members/${project_id}/${member_id}`)).json(); } 
+    catch (error) { errors.push(`Get project member error: ${error.message}`); console.error(error); }
+};
+const fetch_get_objective_price = async id => {
+    try { return await (await fetch(endpoint + `/objective_prices/${id}`)).json(); } 
+    catch (error) { errors.push(`Get objective price error: ${error.message}`); console.error(error); }
+};
+const fetch_get_pack = async id => {
+    try { return await (await fetch(endpoint + `/packs/${id}`)).json(); } 
+    catch (error) { errors.push(`Get pack error: ${error.message}`); console.error(error); }
+};
+const fetch_get_improvement_idea = async id => {
+    try { return await (await fetch(endpoint + `/improvement_ideas/${id}`)).json(); } 
+    catch (error) { errors.push(`Get improvement idea error: ${error.message}`); console.error(error); }
+};
+const fetch_get_link = async id => {
+    try { return await (await fetch(endpoint + `/links/${id}`)).json(); } 
+    catch (error) { errors.push(`Get link error: ${error.message}`); console.error(error); }
+};
 
+const fetch_create_user = async data => {
+    try { return await (await fetch('/users', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Create user error: ${error.message}`); console.error(error); }
+};
+const fetch_create_project = async data => {
+    try { return await (await fetch('/projects', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Create project error: ${error.message}`); console.error(error); }
+};
+const fetch_create_member = async data => {
+    try { return await (await fetch('/members', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Create member error: ${error.message}`); console.error(error); }
+};
+const fetch_create_project_member = async (project_id, data) => {
+    try { return await (await fetch(endpoint + `/project_members/${project_id}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Create project member error: ${error.message}`); console.error(error); }
+};
+const fetch_create_objective_price = async data => {
+    try { return await (await fetch('/objective_prices', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Create objective price error: ${error.message}`); console.error(error); }
+};
+const fetch_create_pack = async data => {
+    try { return await (await fetch('/packs', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Create pack error: ${error.message}`); console.error(error); }
+};
+const fetch_create_improvement_idea = async data => {
+    try { return await (await fetch('/improvement_ideas', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Create improvement idea error: ${error.message}`); console.error(error); }
+};
+const fetch_create_link = async data => {
+    try { return await (await fetch('/links', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Create link error: ${error.message}`); console.error(error); }
+};
+
+const fetch_update_user = async (id, data) => {
+    try { return await (await fetch(endpoint + `/users/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Update user error: ${error.message}`); console.error(error); }
+};
+const fetch_update_project = async (id, data) => {
+    try { return await (await fetch(endpoint + `/projects/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Update project error: ${error.message}`); console.error(error); }
+};
+const fetch_update_member = async (id, data) => {
+    try { return await (await fetch(endpoint + `/members/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Update member error: ${error.message}`); console.error(error); }
+};
+const fetch_update_project_member = async (project_id, member_id, data) => {
+    try { return await (await fetch(endpoint + `/project_members/${project_id}/${member_id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Update project member error: ${error.message}`); console.error(error); }
+};
+const fetch_update_objective_price = async (id, data) => {
+    try { return await (await fetch(endpoint + `/objective_prices/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Update objective price error: ${error.message}`); console.error(error); }
+};
+const fetch_update_pack = async (id, data) => {
+    try { return await (await fetch(endpoint + `/packs/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Update pack error: ${error.message}`); console.error(error); }
+};
+const fetch_update_improvement_idea = async (id, data) => {
+    try { return await (await fetch(endpoint + `/improvement_ideas/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Update improvement idea error: ${error.message}`); console.error(error); }
+};
+const fetch_update_link = async (id, data) => {
+    try { return await (await fetch(endpoint + `/links/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })).json(); } 
+    catch (error) { errors.push(`Update link error: ${error.message}`); console.error(error); }
+};
+
+const fetch_delete_user = async id => {
+    try { return await (await fetch(endpoint + `/users/${id}`, { method: 'DELETE' })).text(); } 
+    catch (error) { errors.push(`Delete user error: ${error.message}`); console.error(error); }
+};
+const fetch_delete_project = async id => {
+    try { return await (await fetch(endpoint + `/projects/${id}`, { method: 'DELETE' })).text(); } 
+    catch (error) { errors.push(`Delete project error: ${error.message}`); console.error(error); }
+};
+const fetch_delete_member = async id => {
+    try { return await (await fetch(endpoint + `/members/${id}`, { method: 'DELETE' })).text(); } 
+    catch (error) { errors.push(`Delete member error: ${error.message}`); console.error(error); }
+};
+const fetch_delete_project_member = async (project_id, member_id) => {
+    try { return await (await fetch(endpoint + `/project_members/${project_id}/${member_id}`, { method: 'DELETE' })).text(); } 
+    catch (error) { errors.push(`Delete project member error: ${error.message}`); console.error(error); }
+};
+const fetch_delete_objective_price = async id => {
+    try { return await (await fetch(endpoint + `/objective_prices/${id}`, { method: 'DELETE' })).text(); } 
+    catch (error) { errors.push(`Delete objective price error: ${error.message}`); console.error(error); }
+};
+const fetch_delete_pack = async id => {
+    try { return await (await fetch(endpoint + `/packs/${id}`, { method: 'DELETE' })).text(); } 
+    catch (error) { errors.push(`Delete pack error: ${error.message}`); console.error(error); }
+};
+const fetch_delete_improvement_idea = async id => {
+    try { return await (await fetch(endpoint + `/improvement_ideas/${id}`, { method: 'DELETE' })).text(); } 
+    catch (error) { errors.push(`Delete improvement idea error: ${error.message}`); console.error(error); }
+};
+const fetch_delete_link = async id => {
+    try { return await (await fetch(endpoint + `/links/${id}`, { method: 'DELETE' })).text(); } 
+    catch (error) { errors.push(`Delete link error: ${error.message}`); console.error(error); }
+};
+
+const fetch_createNewProject = async () => {
+    try {
+        const response = await fetch(endpoint + '/projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newProject)
+        });
+        if (response.ok) {
+            const project = await response.json();
+            projects.push(project);
+            newProject = {
+                name: '',
+                description: '',
+                kpi: 0,
+                dueDate: 96,
+                difficulty: 3,
+                members_ids: [],
+                target_price: 0,
+                current_price: 0,
+                objective_prices: [{ objective_price: 0, price_description: '' }]
+            };
+        } else {
+            console.error('Failed to create project');
+        }
+    } catch (error) {
+        console.error('Error creating project:', error);
+    }
+};
+
+const fetch_createNewPack = async () => {
+    try {
+        const response = await fetch(endpoint + '/packs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newPack)
+        });
+        if (response.ok) {
+            const pack = await response.json();
+            packs.push(pack);
+            newPack = {
+                projectId: null,
+                plan: { description: '', done: false, links: [] },
+                do: { description: '', done: false, links: [] },
+                check: { description: '', done: false, links: [] },
+                act: { description: '', done: false, links: [] },
+                dueDate: '2023-12-01T00:00:00Z',
+                members_ids: [],
+                improvement_ideas: []
+            };
+        } else {
+            console.error('Failed to create pack');
+        }
+    } catch (error) {
+        console.error('Error creating pack:', error);
+    }
+};
+
+const fetch_deleteProject = async (id) => {
+    try {
+        const response = await fetch(endpoint + `/projects/${id}`, {
+            method: 'DELETE'
+        });
+        if (response.ok) {
+            projects = projects.filter(project => project.id !== id);
+        } else {
+            console.error('Failed to delete project');
+        }
+    } catch (error) {
+        console.error('Error deleting project:', error);
+    }
+};
+
+const fetch_deletePack = async (id) => {
+    try {
+        const response = await fetch(endpoint + `/packs/${id}`, {
+            method: 'DELETE'
+        });
+        if (response.ok) {
+            packs = packs.filter(pack => pack.id !== id);
+        } else {
+            console.error('Failed to delete pack');
+        }
+    } catch (error) {
+        console.error('Error deleting pack:', error);
+    }
+};
+
+const fetch_updateProject = async (id, data) => {
+    try {
+        const response = await fetch(endpoint + `/projects/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (response.ok) {
+            const updatedProject = await response.json();
+            projects = projects.map(project => project.id === id ? updatedProject : project);
+        } else {
+            console.error('Failed to update project');
+        }
+    } catch (error) {
+        console.error('Error updating project:', error);
+    }
+};
+
+const fetch_updatePack = async (id, data) => {
+    try {
+        const response = await fetch(endpoint + `/packs/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (response.ok) {
+            const updatedPack = await response.json();
+            packs = packs.map(pack => pack.id === id ? updatedPack : pack);
+        } else {
+            console.error('Failed to update pack');
+        }
+    } catch (error) {
+        console.error('Error updating pack:', error);
+    }
+};
 
 </script>
 
