@@ -76,6 +76,36 @@ const crypto = require('crypto');
 const db_for_app7 = new sqlite('app7.db');
 
 
+// 特定のユーザーに紐づくプロジェクトとそれに紐づく全ての情報を取得するエンドポイントを作成します。
+app.get('/users/:id/projects', (req, res) => {
+    try {
+        const { id } = req.params;
+        const stmt = db_for_app7.prepare('SELECT * FROM projects WHERE user_id = ?');
+        const projects = stmt.all(id);
+        if (projects) {
+            projects.forEach(project => {
+                project.members = db_for_app7.prepare('SELECT * FROM members WHERE id IN (SELECT member_id FROM project_members WHERE project_id = ?)').all(project.id);
+                project.objective_prices = db_for_app7.prepare('SELECT * FROM objective_prices WHERE project_id = ?').all(project.id);
+                project.packs = db_for_app7.prepare('SELECT * FROM packs WHERE project_id = ?').all(project.id);
+                project.packs.forEach(pack => {
+                    pack.links = db_for_app7.prepare('SELECT * FROM links WHERE pack_id = ?').all(pack.id);
+                    pack.improvement_ideas = db_for_app7.prepare('SELECT * FROM improvement_ideas WHERE pack_id = ?').all(pack.id);
+                    pack.improvement_ideas.forEach(idea => {
+                        idea.links = db_for_app7.prepare('SELECT * FROM links WHERE improvement_idea_id = ?').all(idea.id);
+                    });
+                });
+            });
+            res.json(projects);
+        } else {
+            res.status(404).send('Projects not found');
+        }
+    } catch (error) {
+        console.error('Error fetching projects:', error);
+        res.status(500).send('Internal server error');
+    }
+});
+
+
 app.post('/init_db', (req, res) => {
     try {
         db_for_app7.exec('DROP TABLE IF EXISTS users');
