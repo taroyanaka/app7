@@ -1,4 +1,7 @@
 <script>
+    // dbスキーマ作成、validのコードとdbスキーマからendpoint作成
+
+
     import { onMount } from 'svelte';
 
     let users = [
@@ -104,7 +107,7 @@
     }
 
     function saveChart() {
-        const validation = validateAllData();
+        const validation = validateAllData(users, chartsByUser);
         if (!validation.valid) {
             errorMessage = validation.error;
             return;
@@ -184,32 +187,101 @@
         renderRadarChart();
     }
 
-    function validateAllData() {
-        // Check all charts for validity
-        for (const chart of charts) {
-            if (!chart.name || chart.name.trim() === '') {
-                return { valid: false, error: 'チャート名を空にすることはできません' };
+    function validateAllData(users, chartsByUser) {
+        // usersのvaliddation
+        //     id 必須
+        //     uid 必須
+        //     name 必須。10文字以内
+        // chartsByUserのvaliddation
+        //     keyはusersのid
+        //     valueは配列
+        //     name 必須。10文字以内
+        //     labels 必須。5つの文字列の配列、それぞれ10文字以内
+        //     datasets 必須。1つのオブジェクトの配列、それぞれ以下のプロパティを持つ
+        //     label 必須。10文字以内
+        //     data 必須。5つの数値の配列、それぞれ0以上100以下
+        //     backgroundColor 必須。文字列、rgba(0以上255以下, 0以上255以下, 0以上255以下, 0以上1以下)
+        //     borderColor 必須。文字列、rgba(0以上255以下, 0以上255以下, 0以上255以下)
+        //     pointBackgroundColor 必須。文字列、rgba(0以上255以下, 0以上255以下, 0以上255以下)
+
+        // Validate users
+        for (const user of users) {
+            if (!user.id) {
+                return { valid: false, error: 'ユーザーIDが必要です' };
             }
-            if (chart.labels.some(label => !label || label.trim() === '')) {
-                return { valid: false, error: 'ラベルを空にすることはできません' };
+            if (!user.uid) {
+                return { valid: false, error: 'ユーザーUIDが必要です' };
             }
-            if (chart.datasets.length === 0) {
-                return { valid: false, error: 'データセットが必要です' };
+            if (!user.name || user.name.length > 10) {
+                return { valid: false, error: 'ユーザー名は必須で、10文字以内である必要があります' };
             }
-            for (const dataset of chart.datasets) {
-                if (!dataset.label || dataset.label.trim() === '') {
-                    return { valid: false, error: 'データセットラベルを空にすることはできません' };
+        }
+
+        // Validate chartsByUser
+        for (const [userId, charts] of Object.entries(chartsByUser)) {
+            // Check if userId exists in users
+            const validUser = users.some(user => user.id === parseInt(userId));
+            if (!validUser) {
+                return { valid: false, error: `ユーザーID ${userId} が見つかりません` };
+            }
+
+            // Validate each chart
+            for (const chart of charts) {
+                if (!chart.name || chart.name.length > 10) {
+                    return { valid: false, error: 'チャート名は必須で、10文字以内である必要があります' };
                 }
-                if (dataset.data.some(value => typeof value !== 'number' || isNaN(value))) {
-                    return { valid: false, error: 'データセットのデータは数値でなければなりません' };
+                
+                // Validate labels
+                if (!chart.labels || chart.labels.length !== 5 || chart.labels.some(label => label.length > 10)) {
+                    return { valid: false, error: 'ラベルは必須で、5つの項目があり、それぞれ10文字以内である必要があります' };
                 }
-                if (dataset.data.length !== chart.labels.length) {
-                    return { valid: false, error: 'データセットのデータの長さがラベルの長さと一致しません' };
+
+                // Validate datasets
+                if (!chart.datasets || chart.datasets.length === 0) {
+                    return { valid: false, error: 'データセットは必須です' };
+                }
+
+                for (const dataset of chart.datasets) {
+                    if (!dataset.label || dataset.label.length > 10) {
+                        return { valid: false, error: 'データセットラベルは必須で、10文字以内である必要があります' };
+                    }
+
+                    // Validate data
+                    if (!dataset.data || dataset.data.length !== 5 || dataset.data.some(value => typeof value !== 'number' || value < 0 || value > 100)) {
+                        return { valid: false, error: 'データセットのデータは必須で、5つの数値で、各値は0以上100以下でなければなりません' };
+                    }
+
+                    // Validate backgroundColor in rgba format
+                    if (!validateRgbaColor(dataset.backgroundColor)) {
+                        return { valid: false, error: 'backgroundColor は必須で、rgba(0-255, 0-255, 0-255, 0-1)の形式である必要があります' };
+                    }
+
+                    // Validate borderColor in rgba format
+                    if (!validateRgbaColor(dataset.borderColor)) {
+                        return { valid: false, error: 'borderColor は必須で、rgba(0-255, 0-255, 0-255)の形式である必要があります' };
+                    }
+
+                    // Validate pointBackgroundColor in rgba format
+                    if (!validateRgbaColor(dataset.pointBackgroundColor)) {
+                        return { valid: false, error: 'pointBackgroundColor は必須で、rgba(0-255, 0-255, 0-255)の形式である必要があります' };
+                    }
                 }
             }
         }
+
         return { valid: true };
     }
+
+    // Helper function to validate rgba color format
+    function validateRgbaColor(color) {
+        const rgbaPattern = /^rgba\((\d{1,3}), (\d{1,3}), (\d{1,3}), (0|1|0?\.\d+)\)$/;
+        const match = rgbaPattern.exec(color);
+        if (!match) return false;
+
+        const [, r, g, b, a] = match.map(Number);
+        return r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 && a >= 0 && a <= 1;
+    }
+
 </script>
 
 <style>
