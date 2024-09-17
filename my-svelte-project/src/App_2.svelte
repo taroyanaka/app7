@@ -1,22 +1,46 @@
 <script>
     import { onMount } from 'svelte';
 
-    let charts = [
-        {
-            name: 'チャート 1',
-            labels: ['項目1', '項目2', '項目3', '項目4', '項目5'],
-            datasets: [
-                {
-                    label: 'データセット 1',
-                    data: [65, 59, 90, 81, 56],
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgb(255, 99, 132)',
-                    pointBackgroundColor: 'rgb(255, 99, 132)'
-                }
-            ]
-        }
+    let users = [
+        { id: 1, name: 'ユーザー 1' },
+        { id: 2, name: 'ユーザー 2' }
     ];
-    
+
+    let chartsByUser = {
+        1: [
+            {
+                name: 'チャート 1',
+                labels: ['項目1', '項目2', '項目3', '項目4', '項目5'],
+                datasets: [
+                    {
+                        label: 'データセット 1',
+                        data: [65, 59, 90, 81, 56],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        pointBackgroundColor: 'rgb(255, 99, 132)'
+                    }
+                ]
+            }
+        ],
+        2: [
+            {
+                name: 'チャート A',
+                labels: ['項目1', '項目2', '項目3', '項目4', '項目5'],
+                datasets: [
+                    {
+                        label: 'データセット A',
+                        data: [70, 65, 80, 85, 90],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgb(54, 162, 235)',
+                        pointBackgroundColor: 'rgb(54, 162, 235)'
+                    }
+                ]
+            }
+        ]
+    };
+
+    let selectedUserId = 1;
+    let charts = chartsByUser[selectedUserId] || [];
     let selectedChartIndex = 0;
     let form = {
         label: '',
@@ -80,8 +104,9 @@
     }
 
     function saveChart() {
-        if (!currentChart.name.trim()) {
-            errorMessage = 'チャート名を空にすることはできません';
+        const validation = validateAllData();
+        if (!validation.valid) {
+            errorMessage = validation.error;
             return;
         }
         errorMessage = '';
@@ -150,6 +175,41 @@
         currentChart = charts[selectedChartIndex];
         renderRadarChart();
     }
+
+    function handleUserChange(event) {
+        selectedUserId = parseInt(event.target.value, 10);
+        charts = chartsByUser[selectedUserId] || [];
+        selectedChartIndex = 0;
+        currentChart = charts[selectedChartIndex];
+        renderRadarChart();
+    }
+
+    function validateAllData() {
+        // Check all charts for validity
+        for (const chart of charts) {
+            if (!chart.name || chart.name.trim() === '') {
+                return { valid: false, error: 'チャート名を空にすることはできません' };
+            }
+            if (chart.labels.some(label => !label || label.trim() === '')) {
+                return { valid: false, error: 'ラベルを空にすることはできません' };
+            }
+            if (chart.datasets.length === 0) {
+                return { valid: false, error: 'データセットが必要です' };
+            }
+            for (const dataset of chart.datasets) {
+                if (!dataset.label || dataset.label.trim() === '') {
+                    return { valid: false, error: 'データセットラベルを空にすることはできません' };
+                }
+                if (dataset.data.some(value => typeof value !== 'number' || isNaN(value))) {
+                    return { valid: false, error: 'データセットのデータは数値でなければなりません' };
+                }
+                if (dataset.data.length !== chart.labels.length) {
+                    return { valid: false, error: 'データセットのデータの長さがラベルの長さと一致しません' };
+                }
+            }
+        }
+        return { valid: true };
+    }
 </script>
 
 <style>
@@ -207,6 +267,15 @@
     }
 </style>
 
+<div class="user-select">
+    <label for="userSelect">ユーザー選択:</label>
+    <select id="userSelect" on:change={handleUserChange}>
+        {#each users as user}
+            <option value={user.id} selected={user.id === selectedUserId}>{user.name}</option>
+        {/each}
+    </select>
+</div>
+
 <button class="edit-button" on:click={toggleEdit}>編集</button>
 
 <ul class="tabs">
@@ -229,8 +298,6 @@
         </button>
     </li>
 </ul>
-
-
 
 {#if errorMessage}
     <div class="error">{errorMessage}</div>
@@ -260,14 +327,16 @@
             <label>{label}: <input bind:value={form.data[index]} type="number" required></label><br>
         {/each}
         <button type="submit">{editMode ? '更新' : '追加'}</button>
-        <button type="button" on:click={resetForm}>リセット</button>
+        {#if editMode}
+            <button type="button" on:click={resetForm}>キャンセル</button>
+        {/if}
     </form>
 
     <h2>データセット一覧</h2>
     <ul>
         {#each currentChart.datasets as dataset, index}
             <li>
-                {dataset.label}: {dataset.data.join(', ')}
+                {dataset.label} - {dataset.data.join(', ')}
                 <button on:click={() => editDataset(index)}>編集</button>
                 <button on:click={() => deleteDataset(index)}>削除</button>
             </li>
@@ -275,6 +344,5 @@
     </ul>
 </div>
 
-<h2>サンプルデータ機能</h2>
-<button on:click={outputSampleData}>サンプルデータ出力</button>
-<button on:click={addSampleChart}>サンプルデータを新規追加</button>
+<button on:click={outputSampleData}>サンプルデータを出力</button>
+<button on:click={addSampleChart}>サンプルチャートを追加</button>
