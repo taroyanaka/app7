@@ -36,6 +36,28 @@
             { id: 6, projectId: 3, plan: { description: 'Plan 6', done: true, links: [] }, do: { description: 'Do 6', done: true, links: [] }, check: { description: 'Check 6', done: true, links: [] }, act: { description: 'Act 6', done: false, links: [] }, dueDate: '2023-12-25T00:00:00Z' }
         ];
     }
+let foo;
+    const doneOrUndone = (pack, stage) => {
+        console.log("doneOrUndone");
+        // foo = pack;
+        // console.log(pack);
+        // console.log(stage);
+        console.log("pack[stage].done", pack[stage].done);
+        // 指定したパックの指定したステージの完了・未完了を切り替える
+        pack[stage].done = !pack[stage].done;
+        // パックの完了度を計算
+        const progress = packProgress(pack);
+        // パックの完了度が100%になったら、プロジェクトの進捗を更新
+        if (progress === 100) {
+            const project = projects.find(p => p.id === pack.projectId);
+            project.difficulty = Math.max(1, project.difficulty - 1);
+        }
+        // パックの完了度が0%になったら、プロジェクトの進捗を更新
+        if (progress === 0) {
+            const project = projects.find(p => p.id === pack.projectId);
+            project.difficulty = Math.min(5, project.difficulty + 1);
+        }
+    };
 
     // 初期データをロードする
     sampleProjectAndThePacks();
@@ -60,6 +82,11 @@
     });
 
     const setActiveTab = (tab) => activeTab = tab;
+
+    const viewPacks = (projectId) => {
+        setActiveTab('packs');
+        newPack.projectId = projectId;
+    };
 
     const formatDate = (hours) => {
         const date = new Date();
@@ -90,6 +117,12 @@
     const deleteProject = (projectId) => {
         projects = projects.filter(project => project.id !== projectId);
     };
+const packProgress = (pack) => {
+                    const stages = ['plan', 'do', 'check', 'act'];
+                    const completedStages = stages.filter(stage => pack[stage].done).length;
+                    return (completedStages / stages.length) * 100;
+                };
+
 
     // パックを追加する
     const addPack = () => {
@@ -131,6 +164,12 @@
     .stars {
         color: gold;
     }
+    /* .filledのspanをinlineにする */
+    .progress-bar {
+        display: flex;
+    }
+
+
 </style>
 
 <header>
@@ -227,7 +266,7 @@
                 <h3>{getProjectName(pack.projectId)}</h3>
                 {#each ['plan', 'do', 'check', 'act'] as stage, index}
                     <div class:done={pack[stage].done}>
-                        <button on:click={() => done_or_undone(pack, stage)}>{languageData.done}</button>
+                        <button on:click={() => doneOrUndone(pack, stage)}>{languageData.done}</button>
                         <p>{languageData[stage]}: {pack[stage].description}</p>
                         {#each pack[stage].links as link}
                             <a href={link.href} target="_blank">{link.name}</a>
