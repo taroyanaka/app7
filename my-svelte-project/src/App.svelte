@@ -1,13 +1,20 @@
 <script>
     import { onMount } from "svelte";
 
+    let web_data = [];
+    // http://localhost:8000/をgetで取得してweb_dataに格納する関数
+    const get_web_data = async () => {
+        const response = await fetch('http://localhost:8000/');
+        web_data = await response.json();
+    };
+
     let activeTab = 'projects';
     let languageData = {};
     let newProject = {
         name: '',
         description: '',
         kpi: 0,
-        dueDate: 96, // Default due date
+        due_date: 96, // Default due date
         difficulty: 3
     };
     let newPack = {
@@ -19,29 +26,27 @@
     };
     let projects = [];
     let packs = [];
+    let projects_and_packs = [];
     let sortDirection = { projects: 'asc', packs: 'asc' };
 
     function sampleProjectAndThePacks() {
         projects = [
-            { id: 1, name: 'Project 1', description: 'Description 1', kpi: 80, dueDate: 96, difficulty: 3 },
-            { id: 2, name: 'Project 2', description: 'Description 2', kpi: 60, dueDate: 72, difficulty: 2 },
-            { id: 3, name: 'Project 3', description: 'Description 3', kpi: 40, dueDate: 48, difficulty: 1 }
+            { id: 1, name: 'Project 1', description: 'Description 1', kpi: 80, due_date: 96, difficulty: 3 },
+            { id: 2, name: 'Project 2', description: 'Description 2', kpi: 60, due_date: 72, difficulty: 2 },
+            { id: 3, name: 'Project 3', description: 'Description 3', kpi: 40, due_date: 48, difficulty: 1 }
         ];
         packs = [
-            { id: 1, projectId: 1, plan: { description: 'Plan 1', done: true, links: [{ name: 'Link 1', href: 'https://example.com', stars: 3 }] }, do: { description: 'Do 1', done: false, links: [] }, check: { description: 'Check 1', done: false, links: [] }, act: { description: 'Act 1', done: false, links: [] }, dueDate: '2023-12-01T00:00:00Z' },
-            { id: 2, projectId: 1, plan: { description: 'Plan 2', done: true, links: [] }, do: { description: 'Do 2', done: true, links: [] }, check: { description: 'Check 2', done: false, links: [] }, act: { description: 'Act 2', done: false, links: [] }, dueDate: '2023-12-05T00:00:00Z' },
-            { id: 3, projectId: 2, plan: { description: 'Plan 3', done: true, links: [] }, do: { description: 'Do 3', done: true, links: [] }, check: { description: 'Check 3', done: true, links: [] }, act: { description: 'Act 3', done: true, links: [] }, dueDate: '2023-12-10T00:00:00Z' },
-            { id: 4, projectId: 2, plan: { description: 'Plan 4', done: true, links: [] }, do: { description: 'Do 4', done: true, links: [] }, check: { description: 'Check 4', done: true, links: [] }, act: { description: 'Act 4', done: false, links: [] }, dueDate: '2023-12-15T00:00:00Z' },
-            { id: 5, projectId: 3, plan: { description: 'Plan 5', done: true, links: [] }, do: { description: 'Do 5', done: true, links: [] }, check: { description: 'Check 5', done: false, links: [] }, act: { description: 'Act 5', done: false, links: [] }, dueDate: '2023-12-20T00:00:00Z' },
-            { id: 6, projectId: 3, plan: { description: 'Plan 6', done: true, links: [] }, do: { description: 'Do 6', done: true, links: [] }, check: { description: 'Check 6', done: true, links: [] }, act: { description: 'Act 6', done: false, links: [] }, dueDate: '2023-12-25T00:00:00Z' }
+            { id: 1, projectId: 1, plan: { description: 'Plan 1', done: true, links: [{ description: 'Link 1', href: 'https://example.com', stars: 3 }] }, do: { description: 'Do 1', done: false, links: [] }, check: { description: 'Check 1', done: false, links: [] }, act: { description: 'Act 1', done: false, links: [] }, due_date: '2023-12-01T00:00:00Z' },
+            { id: 2, projectId: 1, plan: { description: 'Plan 2', done: true, links: [] }, do: { description: 'Do 2', done: true, links: [] }, check: { description: 'Check 2', done: false, links: [] }, act: { description: 'Act 2', done: false, links: [] }, due_date: '2023-12-05T00:00:00Z' },
+            { id: 3, projectId: 2, plan: { description: 'Plan 3', done: true, links: [] }, do: { description: 'Do 3', done: true, links: [] }, check: { description: 'Check 3', done: true, links: [] }, act: { description: 'Act 3', done: true, links: [] }, due_date: '2023-12-10T00:00:00Z' },
+            { id: 4, projectId: 2, plan: { description: 'Plan 4', done: true, links: [] }, do: { description: 'Do 4', done: true, links: [] }, check: { description: 'Check 4', done: true, links: [] }, act: { description: 'Act 4', done: false, links: [] }, due_date: '2023-12-15T00:00:00Z' },
+            { id: 5, projectId: 3, plan: { description: 'Plan 5', done: true, links: [] }, do: { description: 'Do 5', done: true, links: [] }, check: { description: 'Check 5', done: false, links: [] }, act: { description: 'Act 5', done: false, links: [] }, due_date: '2023-12-20T00:00:00Z' },
+            { id: 6, projectId: 3, plan: { description: 'Plan 6', done: true, links: [] }, do: { description: 'Do 6', done: true, links: [] }, check: { description: 'Check 6', done: true, links: [] }, act: { description: 'Act 6', done: false, links: [] }, due_date: '2023-12-25T00:00:00Z' }
         ];
     }
-    let foo;
-    // const doneOrUndone = (pack, stage) => {
-    // const doneOrUndone = (pack, stage) => {
-    // const doneOrUndone = (pack_projectId, stage, index) => {
+
 function doneOrUndone(packId, stage) {
-        packs = packs.map(pack => {
+    packs = packs.map(pack => {
       if (pack.id === packId) {
         return {
           ...pack,
@@ -53,29 +58,21 @@ function doneOrUndone(packId, stage) {
       }
       return pack;
     });
-        
 
-
-        // console.log("now", now);
-
-
-        // true/falseを反転
-        
-        
-        // パックの完了度を計算
-        const progress = packProgress(packId);
-        const pack = packs.find(p => p.id === packId);
-        // パックの完了度が100%になったら、プロジェクトの進捗を更新
-        if (progress === 100) {
-            const project = projects.find(p => p.id === pack.projectId);
-            project.difficulty = Math.max(1, project.difficulty - 1);
-        }
-        // パックの完了度が0%になったら、プロジェクトの進捗を更新
-        if (progress === 0) {
-            const project = projects.find(p => p.id === pack.projectId);
-            project.difficulty = Math.min(5, project.difficulty + 1);
-        }
-    };
+    // パックの完了度を計算
+    const progress = packProgress(packId);
+    const pack = packs.find(p => p.id === packId);
+    // パックの完了度が100%になったら、プロジェクトの進捗を更新
+    if (progress === 100) {
+        const project = projects.find(p => p.id === pack.projectId);
+        project.difficulty = Math.max(1, project.difficulty - 1);
+    }
+    // パックの完了度が0%になったら、プロジェクトの進捗を更新
+    if (progress === 0) {
+        const project = projects.find(p => p.id === pack.projectId);
+        project.difficulty = Math.min(5, project.difficulty + 1);
+    }
+};
 
     // 初期データをロードする
     sampleProjectAndThePacks();
@@ -91,15 +88,160 @@ function doneOrUndone(packId, stage) {
         const response = await fetch('pdca_lang.json');
         return await response.json();
     };
+// projects_and_packsのpacksのdoneプロパティを全てtrueなら1 falseなら0に変更する関数
+    const change_projects_and_packs_done = () => {
+        const change_true_false_to_1_0 = (param) => {
+            return param ? 1 : 0;
+        };
 
-    $: {
+        const new_data = projects_and_packs.map(project => {
+            return {
+                ...project,
+                packs: project.packs.map(pack => {
+                    return {
+                        ...pack,
+                        plan: {
+                            ...pack.plan,
+                            done: change_true_false_to_1_0(pack.plan.done)
+                        },
+                        do: {
+                            ...pack.do,
+                            done: change_true_false_to_1_0(pack.do.done)
+                        },
+                        check: {
+                            ...pack.check,
+                            done: change_true_false_to_1_0(pack.check.done)
+                        },
+                        act: {
+                            ...pack.act,
+                            done: change_true_false_to_1_0(pack.act.done)
+                        }
+                    };
+                })
+            };
+        });
+        projects_and_packs = [...new_data];
+
+    };
+
+
+    // web_dataとprojects_and_packsを比較して、相違点がある箇所をconsole.logで表示する関数
+    const compare_web_data_and_projects_and_packs = async () => {
+        console.log("web_data", web_data);
+        // web_dataとprojects_and_packsを比較して、相違点がある箇所をconsole.logで表示する
+        const compare = (web_data, projects_and_packs) => {
+            const web_data_projects = web_data.map(project => {
+                return {
+                    ...project,
+                    packs: project.packs.map(pack => {
+                        return {
+                            ...pack,
+                            plan: {
+                                ...pack.plan,
+                                done: pack.plan.done ? 1 : 0
+                            },
+                            do: {
+                                ...pack.do,
+                                done: pack.do.done ? 1 : 0
+                            },
+                            check: {
+                                ...pack.check,
+                                done: pack.check.done ? 1 : 0
+                            },
+                            act: {
+                                ...pack.act,
+                                done: pack.act.done ? 1 : 0
+                            }
+                        };
+                    })
+                };
+            });
+
+            const projects_and_packs_projects = projects_and_packs.map(project => {
+                return {
+                    ...project,
+                    packs: project.packs.map(pack => {
+                        return {
+                            ...pack,
+                            plan: {
+                                ...pack.plan,
+                                done: pack.plan.done ? 1 : 0
+                            },
+                            do: {
+                                ...pack.do,
+                                done: pack.do.done ? 1 : 0
+                            },
+                            check: {
+                                ...pack.check,
+                                done: pack.check.done ? 1 : 0
+                            },
+                            act: {
+                                ...pack.act,
+                                done: pack.act.done ? 1 : 0
+                            }
+                        };
+                    })
+                };
+            });
+
+            const diff = (web_data_projects, projects_and_packs_projects) => {
+                const diff_projects = web_data_projects.filter(web_data_project => {
+                    const projects_and_packs_project = projects_and_packs_projects.find(projects_and_packs_project => projects_and_packs_project.id === web_data_project.id);
+                    if (!projects_and_packs_project) {
+                        return true;
+                    }
+                    const diff_packs = web_data_project.packs.filter(web_data_pack => {
+                        const projects_and_packs_pack = projects_and_packs_project.packs.find(projects_and_packs_pack => projects_and_packs_pack.id === web_data_pack.id);
+                        if (!projects_and_packs_pack) {
+                            return true;
+                        }
+                        if (web_data_pack.plan.done !== projects_and_packs_pack.plan.done) {
+                            return true;
+                        }
+                        if (web_data_pack.do.done !== projects_and_packs_pack.do.done) {
+                            return true;
+                        }
+                        if (web_data_pack.check.done !== projects_and_packs_pack.check.done) {
+                            return true;
+                        }
+                        if (web_data_pack.act.done !== projects_and_packs_pack.act.done) {
+                            return true;
+                        }
+                        return false;
+                    });
+                    return diff_packs.length > 0;
+                });
+                return diff_projects;
+            };
+
+            const differences = diff(web_data_projects, projects_and_packs_projects);
+            console.log("Differences:", differences);
+        };
+
+        compare(web_data, projects_and_packs);
+    };
+
+
+    $: (async () => {
         console.log("projects", projects);
         console.log("packs", packs);
+        projects_and_packs = projects.map(project => {
+            return {
+                ...project,
+                packs: packs.filter(pack => pack.projectId === project.id)
+            };
+        });
+        change_projects_and_packs_done();
         sortedPacks();
-    }
+        await get_web_data();
+        await compare_web_data_and_projects_and_packs();
+    })();
 
     onMount(async () => {
         languageData = await loadTranslations();
+
+
+
         // 初回ロード時に空の状態で開始
         // projects = [];
         // packs = [];
@@ -134,7 +276,7 @@ function doneOrUndone(packId, stage) {
         const newProjectEntry = { ...newProject, id: Date.now() };
         projects = [...projects, newProjectEntry];
         // プロジェクト追加後、入力をリセット
-        newProject = { name: '', description: '', kpi: 0, dueDate: 96, difficulty: 3 };
+        newProject = { name: '', description: '', kpi: 0, due_date: 96, difficulty: 3 };
     };
 
     // プロジェクトを削除する
@@ -214,18 +356,19 @@ const packProgress = (pack_id) => {
     <input bind:value={newProject.name} type="text" placeholder={languageData.projectName}>
     <textarea bind:value={newProject.description} placeholder={languageData.projectDescription}></textarea>
     <input bind:value={newProject.kpi} type="number" placeholder={languageData.projectKPI}>
-    <input bind:value={newProject.dueDate} type="number" placeholder={languageData.projectDueDate} min="1">
+    <input bind:value={newProject.due_date} type="number" placeholder={languageData.projectDueDate} min="1">
     <button on:click={addProject}>{languageData.addProject}</button>
 
     <h2>{languageData.existingProjects}</h2>
     <div class="project-list">
-        {#each sortedProjects() as project}
+        <!-- {#each sortedProjects() as project} -->
+        {#each projects as project}
             <div class="project">
                 <h3>{project.name}</h3>
                 <p>{project.description}</p>
                 <p>KPI: {project.kpi}</p>
                 <p>Difficulty: <span class="stars">{"★".repeat(project.difficulty)}</span></p>
-                <p>Due Date: {formatDate(project.dueDate)}</p>
+                <p>Due Date: {formatDate(project.due_date)}</p>
                 <div class="progress-bar" style="width: {projectProgress(project)}%">
                     {projectProgress(project)}%
                     {#each Array(10) as _, i}
@@ -270,7 +413,7 @@ const packProgress = (pack_id) => {
         </label>
         <div class="links">
             {#each newPack[stage].links as link, linkIndex}
-                <input bind:value={link.name} type="text" placeholder={languageData.linkName}>
+                <input bind:value={link.description} type="text" placeholder={languageData.linkName}>
                 <input bind:value={link.href} type="url" placeholder={languageData.linkHref}>
                 <select bind:value={link.stars}>
                     {#each Array(5) as _, i}
@@ -283,7 +426,7 @@ const packProgress = (pack_id) => {
         </div>
     {/each}
 
-    <input bind:value={newPack.dueDate} type="datetime-local" placeholder={languageData.dueDate}>
+    <input bind:value={newPack.due_date} type="datetime-local" placeholder={languageData.due_date}>
     <button on:click={addPack}>{languageData.addPack}</button>
 
     <h2>{languageData.existingPacks}</h2>
@@ -292,16 +435,11 @@ const packProgress = (pack_id) => {
             <div class="pack">
                 <h3>{getProjectName(pack.projectId)}</h3>
                 {#each ['plan', 'do', 'check', 'act'] as stage, index}
-                <!-- pack.projectId: {pack.projectId} -->
-                <!-- stage: {stage} -->
-                <!-- index: {index} -->
-                <!-- pack[stage].done: {pack[stage].done} -->
                     <div class:done={pack[stage].done}>
-                        <!-- <button on:click={() => doneOrUndone(pack.projectId, stage, index)}>{languageData.done}</button> -->
                         <button on:click={() => doneOrUndone(pack.id, stage)}>{languageData.done}</button>
                         <p>{languageData[stage]}: {pack[stage].description}</p>
                         {#each pack[stage].links as link}
-                            <a href={link.href} target="_blank">{link.name}</a>
+                            <a href={link.href} target="_blank">{link.description}</a>
                             <span class="stars">{"★".repeat(link.stars)}</span>
                         {/each}
                     </div>
