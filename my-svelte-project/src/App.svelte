@@ -74,30 +74,40 @@
     };
 
 function doneOrUndone(packId, stage) {
+    // projects_and_packsの該当のpackのdoneを更新
     packs = packs.map(pack => {
-      if (pack.id === packId) {
-        return {
-          ...pack,
-          [stage]: {
-            ...pack[stage],
-            done: !pack[stage].done
-          }
-        };
-      }
-      return pack;
+        if (pack.id === packId) {
+            pack[`${stage}_done`] = pack[`${stage}_done`] ? 0 : 1;
+        }
+        return pack;
     });
+    // projects_and_packsの該当のpackのdoneを更新
+    // packIdからprojectIdを取得
+    const projectId = packs.find(p => p.id === packId).project_id;
 
     // パックの完了度を計算
     const progress = packProgress(packId);
     const pack = packs.find(p => p.id === packId);
+
+    const project = projects_and_packs.find(project => project.id === projectId);
+    project.packs = project.packs.map(p => {
+        if (p.id === packId) {
+            p[`${stage}_done`] = p[`${stage}_done`] ? 0 : 1;
+        }
+        return p;
+    });
+
+
+
+
     // パックの完了度が100%になったら、プロジェクトの進捗を更新
     if (progress === 100) {
-        const project = projects.find(p => p.id === pack.projectId);
+        const project = projects_and_packs.find(p => p.id === projectId);
         project.difficulty = Math.max(1, project.difficulty - 1);
     }
     // パックの完了度が0%になったら、プロジェクトの進捗を更新
     if (progress === 0) {
-        const project = projects.find(p => p.id === pack.projectId);
+        const project = projects_and_packs.find(p => p.id === projectId);
         project.difficulty = Math.min(5, project.difficulty + 1);
     }
 };
