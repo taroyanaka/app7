@@ -27,5 +27,10 @@
     "packsSummary": "Packs Summary",
     "postToTwitter": "Post Project to Twitter",
     "postPackToTwitter": "Post Pack to Twitter",
-    "languageIcon": "🇬🇧"
+    "languageIcon": "🇬🇧",
+    "planDescription": "Plan Description",
+    "doDescription": "Do Description",
+    "checkDescription": "Check Description",
+    "actDescription": "Act Description",
+    "packDueDate": "Pack Due Date"
 }
