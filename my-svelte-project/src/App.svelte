@@ -1,4 +1,6 @@
 <script>
+    // firebase authのコード移植してfetchのコード全般追加
+
     import { onMount } from "svelte";
 
     let activeTab = 'projects';
