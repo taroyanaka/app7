@@ -15,7 +15,7 @@
     }
     let auth_login_result = 'Not logged in';
     let auth_uid = "";
-    let auth_endpoint = 'http://localhost:8000';
+    let web_endpoint = 'http://localhost:8000';
 
     const auth_firebase_config = {
         apiKey: "AIzaSyBcOlIDP2KWbJuKM0WeMHNp-WvjTVfLt9Y",
@@ -32,12 +32,12 @@
         firebase.auth().onAuthStateChanged(current_user => {
             auth_user = current_user;
             if (auth_user) {
-                login_result = `Logged in as: ${auth_user.displayName}`;
-                uid = auth_user.uid;
+                auth_login_result = `Logged in as: ${auth_user.displayName}`;
+                auth_uid = auth_user.uid;
                 fetch_data();
             } else {
-                login_result = 'Not logged in';
-                uid = "";
+                auth_login_result = 'Not logged in';
+                auth_uid = "";
             }
         });
     }
@@ -45,7 +45,7 @@
     function auth_google_login() {
         firebase.auth().signInWithPopup(auth_google_provider).then(result => {
             auth_user = result.user;
-            login_result = `Logged in as: ${auth_user.displayName}`;
+            auth_login_result = `Logged in as: ${auth_user.displayName}`;
         }).catch(error => {
             console.error('Error during Google login:', error);
             alert('Google login failed. ' + error.message);
@@ -55,7 +55,7 @@
     function auth_sign_out() {
         firebase.auth().signOut().then(() => {
             auth_user = null;
-            login_result = 'Not logged in';
+            auth_login_result = 'Not logged in';
         }).catch(error => {
             console.error('Error during sign-out:', error);
             alert('Sign out failed. ' + error.message);
@@ -65,7 +65,7 @@
     // 以下をfetchする関数を追加
     const initializeDatabase = async () => {
         try {
-            const response = await fetch(endpoint + '/app5/init-database', {
+            const response = await fetch(web_endpoint + '/init_db', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -82,12 +82,12 @@
     async function fetch_data() {
         try {
             console.log('fetch_data');
-            const response = await fetch(endpoint + '/', {
+            const response = await fetch(web_endpoint + '/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ uid })
+                body: JSON.stringify({ auth_uid })
             });
             const data = await response.json();
             web_data = data;
