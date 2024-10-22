@@ -2,6 +2,7 @@
     // 命名規則(prefix)
     // auth => authentication関係の変数と関数
     // test => テスト用の変数と関数
+    // design => デザイン関係の変数と関数
     // web => webデータの変数と関数
     // fetch => fetch関係の関数
 
