@@ -10,9 +10,88 @@
     // firebase authのコード移植してfetchのコード全般追加
 
     import { onMount } from "svelte";
+
+let errors = [];
+const all_validation_fn = {
+    validateUser: (uid) => {
+        const errors = [];
+        const uidRegex = /^[a-zA-Z0-9_-]{28}$/; // Google Firebase Authentication UID format
+        if (!uidRegex.test(uid)) {
+            errors.push('Invalid UID format');
+        }
+        return errors;
+    },
+    validateProject: (project) => {
+        const errors = [];
+        if (typeof project.name !== 'string' || project.name.length < 1 || project.name.length > 50) {
+            errors.push('Invalid project name');
+        }
+        if (typeof project.description !== 'string' || project.description.length < 1 || project.description.length > 300) {
+            errors.push('Invalid project description');
+        }
+        if (!Number.isInteger(project.kpi) || project.kpi < 0 || project.kpi > 100) {
+            errors.push('Invalid project KPI');
+        }
+        if (isNaN(Date.parse(project.due_date))) {
+            errors.push('Invalid project due date');
+        }
+        if (!Number.isInteger(project.difficulty) || project.difficulty < 1 || project.difficulty > 5) {
+            errors.push('Invalid project difficulty');
+        }
+        return errors;
+    },
+    validatePack: (pack) => {
+        const errors = [];
+        if (typeof pack.plan_description !== 'string' || pack.plan_description.length < 1 || pack.plan_description.length > 300) {
+            errors.push('Invalid plan description');
+        }
+        if (![0, 1].includes(pack.plan_done)) {
+            errors.push('Invalid plan done value');
+        }
+        if (typeof pack.do_description !== 'string' || pack.do_description.length < 1 || pack.do_description.length > 300) {
+            errors.push('Invalid do description');
+        }
+        if (![0, 1].includes(pack.do_done)) {
+            errors.push('Invalid do done value');
+        }
+        if (typeof pack.check_description !== 'string' || pack.check_description.length < 1 || pack.check_description.length > 300) {
+            errors.push('Invalid check description');
+        }
+        if (![0, 1].includes(pack.check_done)) {
+            errors.push('Invalid check done value');
+        }
+        if (typeof pack.act_description !== 'string' || pack.act_description.length < 1 || pack.act_description.length > 300) {
+            errors.push('Invalid act description');
+        }
+        if (![0, 1].includes(pack.act_done)) {
+            errors.push('Invalid act done value');
+        }
+        if (isNaN(Date.parse(pack.due_date))) {
+            errors.push('Invalid pack due date');
+        }
+        return errors;
+    },
+    validateLink: (link) => {
+        const errors = [];
+        const validStages = ['plan', 'do', 'check', 'act'];
+    
+        if (typeof link.url !== 'string' || link.url.length < 1 || link.url.length > 300 || !/^https?:\/\/[^\s$.?#].[^\s]*$/.test(link.url)) {
+            errors.push('Invalid URL');
+        }
+        if (typeof link.description !== 'string' || link.description.length < 1 || link.description.length > 300) {
+            errors.push('Invalid link description');
+        }
+        if (!validStages.includes(link.stage)) {
+            errors.push('Invalid stage');
+        }
+        return errors;
+    }
+};
+
     let auth_user = null;
     let auth_login_result = 'Not logged in';
     let auth_uid = "";
+    let auth_user_id = null;
     let web_endpoint = 'http://localhost:8000';
     let web_data = [];
 
@@ -96,6 +175,70 @@
             [projects_and_packs, packs] = [web_data.projects_and_packs, web_data.packs];
         } catch (error) {
             console.error("Error fetching data:", error);
+        }
+    }
+
+    async function create_user() {
+        try {
+            // all_validation_fnでvalidateUserを実行
+            errors = all_validation_fn.validateUser(auth_uid);
+            const response = await fetch(`${web_endpoint}/create_users`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ uid: auth_uid })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Error creating user:', errorData.errors);
+                return;
+            }
+            const data = await response.json();
+            if(data.id) {
+                auth_user_id = data.id;
+            }
+        } catch (error) {
+            console.error('Error creating user:', error);
+        }
+    }
+
+    async function create_project() {
+        try {
+            // uidがない場合はエラーで終了
+            if (!auth_uid) {
+                console.error('Error creating project: No UID');
+                return;
+            }
+            // all_validation_fnでチェック
+            errors = all_validation_fn.validateProject(newProject);
+            const response = await fetch(`${web_endpoint}/create_projects`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: newProject.user_id,
+                    name: newProject.name,
+                    description: newProject.description,
+                    kpi: newProject.kpi,
+                    due_date: newProject.due_date,
+                    difficulty: newProject.difficulty,
+                    uid: auth_uid
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Error creating project:', errorData.errors);
+                return;
+            }
+
+            const data = await response.json();
+            console.log('Project created with ID:', data.id);
+        } catch (error) {
+            console.error('Error creating project:', error);
         }
     }
 
@@ -319,16 +462,6 @@ const packProgress = (pack_id) => {
     <button on:click={initializeDatabase}>Initialize Database</button>
     <button on:click={fetch_data}>Fetch Data</button>
     <h2>{languageData.createProject}</h2>
-    <!-- inputを生成 -->
-     <!--     let newProject = {
-        user_id: 1, // デフォルトのユーザーID
-        name: '',
-        description: '',
-        kpi: 0,
-        // due_dateをiso8601形式
-        due_date: new Date().toISOString(),
-        difficulty: 3
-    }; -->
     <input bind:value={newProject.name} type="text" placeholder={languageData.projectName} maxlength="100">
     <input bind:value={newProject.description} type="text" placeholder={languageData.projectDescription} maxlength="200">
     <input bind:value={newProject.kpi} type="number" placeholder={languageData.projectKPI} min="0">
