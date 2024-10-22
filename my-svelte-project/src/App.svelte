@@ -91,12 +91,9 @@
 
     async function fetch_data() {
         try {
-            console.log('fetch_data');
             const response = await fetch(web_endpoint + '/', {method: 'GET'});
             web_data = await response.json();
-            console.log('Web data:', web_data);
-            const separate_projects_and_packs_AND_packs = (web_data) => [web_data.projects_and_packs, web_data.packs];
-            [projects_and_packs, packs] = separate_projects_and_packs_AND_packs(web_data);
+            [projects_and_packs, packs] = [web_data.projects_and_packs, web_data.packs];
         } catch (error) {
             console.error("Error fetching data:", error);
         }
@@ -344,7 +341,7 @@ const packProgress = (pack_id) => {
         <!-- {#each sortedProjects() as project} -->
         {#each projects_and_packs as project}
             <div class="project">
-                <h3>{project.name}</h3>
+                <h3>{project.name}: user id: {project.user_id}</h3>
                 <p>{project.description}</p>
                 <p>KPI: {project.kpi}</p>
                 <p>Difficulty: <span class="stars">{"★".repeat(project.difficulty)}</span></p>
