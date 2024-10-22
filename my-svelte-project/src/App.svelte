@@ -1,7 +1,99 @@
 <script>
+    // 命名規則(prefix)
+    // auth => authentication関係の変数と関数
+    // test => テスト用の変数と関数
+    // web => webデータの変数と関数
+    // fetch => fetch関係の関数
+
+
     // firebase authのコード移植してfetchのコード全般追加
 
     import { onMount } from "svelte";
+    let auth_user = {
+        displayName: '',
+    }
+    let auth_login_result = 'Not logged in';
+    let auth_uid = "";
+    let auth_endpoint = 'http://localhost:8000';
+
+    const auth_firebase_config = {
+        apiKey: "AIzaSyBcOlIDP2KWbJuKM0WeMHNp-WvjTVfLt9Y",
+        authDomain: "p2auth-ea50a.firebaseapp.com",
+        projectId: "p2auth-ea50a",
+        storageBucket: "p2auth-ea50a.appspot.com",
+        messagingSenderId: "796225429484",
+        appId: "1:796225429484:web:ece56ef2fc0be28cd6eac9"
+    };
+    firebase.initializeApp(auth_firebase_config);
+    const auth_google_provider = new firebase.auth.GoogleAuthProvider();
+
+    function auth_check_login() {
+        firebase.auth().onAuthStateChanged(current_user => {
+            auth_user = current_user;
+            if (auth_user) {
+                login_result = `Logged in as: ${auth_user.displayName}`;
+                uid = auth_user.uid;
+                fetch_data();
+            } else {
+                login_result = 'Not logged in';
+                uid = "";
+            }
+        });
+    }
+
+    function auth_google_login() {
+        firebase.auth().signInWithPopup(auth_google_provider).then(result => {
+            auth_user = result.user;
+            login_result = `Logged in as: ${auth_user.displayName}`;
+        }).catch(error => {
+            console.error('Error during Google login:', error);
+            alert('Google login failed. ' + error.message);
+        });
+    }
+
+    function auth_sign_out() {
+        firebase.auth().signOut().then(() => {
+            auth_user = null;
+            login_result = 'Not logged in';
+        }).catch(error => {
+            console.error('Error during sign-out:', error);
+            alert('Sign out failed. ' + error.message);
+        });
+    }
+
+    // 以下をfetchする関数を追加
+    const initializeDatabase = async () => {
+        try {
+            const response = await fetch(endpoint + '/app5/init-database', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ password: 'init' })
+            });
+            const data = await response.json();
+            console.log('Database initialized:', data);
+        } catch (error) {
+            console.error('Error initializing database:', error);
+        }
+    };
+
+    async function fetch_data() {
+        try {
+            console.log('fetch_data');
+            const response = await fetch(endpoint + '/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ uid })
+            });
+            const data = await response.json();
+            web_data = data;
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    }
 
     let activeTab = 'projects';
     let languageData = {};
