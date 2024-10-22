@@ -88,9 +88,8 @@ const all_validation_fn = {
     }
 };
 
-    let auth_user = null;
     let auth_login_result = 'Not logged in';
-    let auth_uid = "";
+    let auth_uid = null;
     let auth_user_id = null;
     let web_endpoint = 'http://localhost:8000';
     let web_data = [];
@@ -111,13 +110,13 @@ const all_validation_fn = {
             const current_user = await new Promise((resolve, reject) => {
                 firebase.auth().onAuthStateChanged(resolve, reject);
             });
-            console.log('Current user:', current_user);
+            // console.log('Current user:', current_user);
         
-            auth_user = current_user;
+            const auth_user = current_user;
             if (auth_user) {
-                auth_login_result = `Logged in as: ${auth_user.displayName}`;
+                auth_login_result = 'Logged in';
                 auth_uid = auth_user.uid;
-                await fetch_data();
+                // await fetch_data();
             } else {
                 auth_login_result = 'Not logged in';
                 auth_uid = "";
@@ -132,7 +131,7 @@ const all_validation_fn = {
     async function auth_google_login() {
         try {
             const result = await firebase.auth().signInWithPopup(auth_google_provider);
-            auth_user = result.user;
+            const auth_user = result.user;
             auth_login_result = `Logged in as: ${auth_user.displayName}`;
         } catch (error) {
             console.error('Error during Google login:', error);
@@ -143,7 +142,6 @@ const all_validation_fn = {
     async function auth_sign_out() {
         try {
             await firebase.auth().signOut();
-            auth_user = null;
             auth_login_result = 'Not logged in';
         } catch (error) {
             console.error('Error during sign-out:', error);
@@ -178,48 +176,29 @@ const all_validation_fn = {
         }
     }
 
-    async function create_user() {
-        try {
-            // all_validation_fnでvalidateUserを実行
-            errors = all_validation_fn.validateUser(auth_uid);
-            const response = await fetch(`${web_endpoint}/create_users`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ uid: auth_uid })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Error creating user:', errorData.errors);
-                return;
-            }
-            const data = await response.json();
-            if(data.id) {
-                auth_user_id = data.id;
-            }
-        } catch (error) {
-            console.error('Error creating user:', error);
-        }
-    }
-
     async function create_project() {
         try {
+            console.log('Creating project:', newProject);
             // uidがない場合はエラーで終了
             if (!auth_uid) {
+                errors.push('Error creating project: No UID');
                 console.error('Error creating project: No UID');
                 return;
             }
             // all_validation_fnでチェック
-            errors = all_validation_fn.validateProject(newProject);
+            const valid_errors = all_validation_fn.validateProject(newProject);
+            errors.push(...valid_errors);
+            // errorsがある場合はエラーで終了
+            if (errors.length > 0) {
+                console.error('Error creating project:', errors);
+                return;
+            }
             const response = await fetch(`${web_endpoint}/create_projects`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    user_id: newProject.user_id,
                     name: newProject.name,
                     description: newProject.description,
                     kpi: newProject.kpi,
@@ -245,7 +224,6 @@ const all_validation_fn = {
     let activeTab = 'projects';
     let languageData = {};
     let newProject = {
-        user_id: 1, // デフォルトのユーザーID
         name: '',
         description: '',
         kpi: 0,
@@ -350,10 +328,10 @@ function doneOrUndone(packId, stage) {
         const totalPacks = packs.filter(pack => pack.project_id === project.id).length;
         // const donePacks = packs.filter(pack => pack.project_id === project.id && pack.plan.done && pack.do.done && pack.check.done && pack.act.done).length;
         const donePacks = packs.filter(pack => pack.project_id === project.id && pack.plan_done && pack.do_done && pack.check_done && pack.act_done).length;
-        console.log("totalPacks", totalPacks);
-        console.log("donePacks", donePacks);
+        // console.log("totalPacks", totalPacks);
+        // console.log("donePacks", donePacks);
         const res = totalPacks === 0 ? 0 : Math.round(donePacks / totalPacks * 100);
-        console.log("res", res);
+        // console.log("res", res);
         return res;
     };
 
@@ -372,8 +350,8 @@ function doneOrUndone(packId, stage) {
 
     onMount(async () => {
         languageData = await loadTranslations();
-        await auth_check_login();
         await fetch_data();
+        await auth_check_login();
 
         // 初回ロード時に空の状態で開始
         // projects = [];
@@ -445,11 +423,12 @@ const packProgress = (pack_id) => {
 </style>
 
 <header>
-    {#if auth_user}
+    {#if auth_login_result === 'Logged in'}
     <button on:click={auth_sign_out}>Logout</button>
     {:else}
     <button on:click={auth_google_login}>Login</button>
     {/if}
+auth_login_result: {auth_login_result}
 </header>
 
 <nav>
@@ -462,12 +441,15 @@ const packProgress = (pack_id) => {
     <button on:click={initializeDatabase}>Initialize Database</button>
     <button on:click={fetch_data}>Fetch Data</button>
     <h2>{languageData.createProject}</h2>
+
+    {#if auth_login_result === 'Logged in'  && auth_uid !== null}
     <input bind:value={newProject.name} type="text" placeholder={languageData.projectName} maxlength="100">
     <input bind:value={newProject.description} type="text" placeholder={languageData.projectDescription} maxlength="200">
     <input bind:value={newProject.kpi} type="number" placeholder={languageData.projectKPI} min="0">
     <input bind:value={newProject.due_date} type="datetime-local" placeholder={languageData.projectDueDate}>
     <input bind:value={newProject.difficulty} type="number" placeholder={languageData.projectDifficulty} min="1" max="5">
-    <button on:click={addProject}>{languageData.addProject}</button>
+    <button on:click={create_project}>{languageData.addProject}</button>
+    {/if}
 
     <h2>{languageData.existingProjects}</h2>
     <div class="project-list">
