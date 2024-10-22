@@ -10,12 +10,11 @@
     // firebase authのコード移植してfetchのコード全般追加
 
     import { onMount } from "svelte";
-    let auth_user = {
-        displayName: '',
-    }
+    let auth_user = null;
     let auth_login_result = 'Not logged in';
     let auth_uid = "";
     let web_endpoint = 'http://localhost:8000';
+    let web_data = [];
 
     const auth_firebase_config = {
         apiKey: "AIzaSyBcOlIDP2KWbJuKM0WeMHNp-WvjTVfLt9Y",
@@ -28,42 +27,53 @@
     firebase.initializeApp(auth_firebase_config);
     const auth_google_provider = new firebase.auth.GoogleAuthProvider();
 
-    function auth_check_login() {
-        firebase.auth().onAuthStateChanged(current_user => {
+    async function auth_check_login() {
+        try {
+            const current_user = await new Promise((resolve, reject) => {
+                firebase.auth().onAuthStateChanged(resolve, reject);
+            });
+            console.log('Current user:', current_user);
+        
             auth_user = current_user;
             if (auth_user) {
                 auth_login_result = `Logged in as: ${auth_user.displayName}`;
                 auth_uid = auth_user.uid;
-                fetch_data();
+                await fetch_data();
             } else {
                 auth_login_result = 'Not logged in';
                 auth_uid = "";
             }
-        });
+        } catch (error) {
+            console.error('Error during authentication:', error);
+            auth_login_result = 'Authentication failed';
+            auth_uid = "";
+        }
     }
 
-    function auth_google_login() {
-        firebase.auth().signInWithPopup(auth_google_provider).then(result => {
+    async function auth_google_login() {
+        try {
+            const result = await firebase.auth().signInWithPopup(auth_google_provider);
             auth_user = result.user;
             auth_login_result = `Logged in as: ${auth_user.displayName}`;
-        }).catch(error => {
+        } catch (error) {
             console.error('Error during Google login:', error);
             alert('Google login failed. ' + error.message);
-        });
+        }
     }
 
-    function auth_sign_out() {
-        firebase.auth().signOut().then(() => {
+    async function auth_sign_out() {
+        try {
+            await firebase.auth().signOut();
             auth_user = null;
             auth_login_result = 'Not logged in';
-        }).catch(error => {
+        } catch (error) {
             console.error('Error during sign-out:', error);
             alert('Sign out failed. ' + error.message);
-        });
+        }
     }
 
     // 以下をfetchする関数を追加
-    const initializeDatabase = async () => {
+    async function initializeDatabase() {
         try {
             const response = await fetch(web_endpoint + '/init_db', {
                 method: 'POST',
@@ -82,15 +92,11 @@
     async function fetch_data() {
         try {
             console.log('fetch_data');
-            const response = await fetch(web_endpoint + '/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ auth_uid })
-            });
-            const data = await response.json();
-            web_data = data;
+            const response = await fetch(web_endpoint + '/', {method: 'GET'});
+            web_data = await response.json();
+            console.log('Web data:', web_data);
+            const separate_projects_and_packs_AND_packs = (web_data) => [web_data.projects_and_packs, web_data.packs];
+            [projects_and_packs, packs] = separate_projects_and_packs_AND_packs(web_data);
         } catch (error) {
             console.error("Error fetching data:", error);
         }
@@ -159,15 +165,6 @@
     let sortDirection = { projects: 'asc', packs: 'asc' };
 
 
-    let web_data = [];
-    // http://localhost:8000/をgetで取得してweb_dataに格納する関数
-    const get_web_data = async () => {
-        const response = await fetch('http://localhost:8000/');
-        web_data = await response.json();
-        packs = web_data.packs;
-        projects_and_packs = web_data.projects_and_packs;
-    };
-
 function doneOrUndone(packId, stage) {
     // projects_and_packsの該当のpackのdoneを更新
     packs = packs.map(pack => {
@@ -229,12 +226,14 @@ function doneOrUndone(packId, stage) {
     $: (async () => {
         // console.log("projects", projects);
         // console.log("packs", packs);
-        await get_web_data();
+        // await get_web_data();
         // sortedPacks();
     })();
 
     onMount(async () => {
         languageData = await loadTranslations();
+        await auth_check_login();
+        await fetch_data();
 
         // 初回ロード時に空の状態で開始
         // projects = [];
@@ -306,6 +305,11 @@ const packProgress = (pack_id) => {
 </style>
 
 <header>
+    {#if auth_user}
+    <button on:click={auth_sign_out}>Logout</button>
+    {:else}
+    <button on:click={auth_google_login}>Login</button>
+    {/if}
 </header>
 
 <nav>
@@ -315,7 +319,8 @@ const packProgress = (pack_id) => {
 </nav>
 
 {#if activeTab === 'projects'}
-    <button on:click={get_web_data}>sampleProjectAndThePacks</button>
+    <button on:click={initializeDatabase}>Initialize Database</button>
+    <button on:click={fetch_data}>Fetch Data</button>
     <h2>{languageData.createProject}</h2>
     <!-- inputを生成 -->
      <!--     let newProject = {
