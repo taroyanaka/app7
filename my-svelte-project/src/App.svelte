@@ -7,6 +7,8 @@
     // fetch => fetch関係の関数
 
 
+    // NOT NULL制約つけるのサボってた結果create_linksのデバッグがクソだるくなった
+        // init_dbでそれぞれのカラム精査して制約をつけられる限り付ける
     // fetchのコード残り、deleteとupdate
         // =>linksのupdateのエンドポイントは不要(deleteのみ追加)
 
