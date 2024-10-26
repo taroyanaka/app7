@@ -10,6 +10,53 @@
     // firebase authのコード移植してfetchのコード全般追加
 
     import { onMount } from "svelte";
+    let design_link_create_mode = false;
+
+    // input type="datetime-local"の値をと、
+    // sqlite3のcreate_at(TEXT型)とupdate_at(TEXT型)に保存する際はISO8601形式で保存するため、
+    // それぞれの関数を作成create_project, create_packの2つの関数で使用
+    function toISOStringFromDatetimeLocal(datetimeLocalValue) {
+        const date = new Date(datetimeLocalValue);
+        return date.toISOString();
+    }
+    function toDatetimeLocalFromISOString(isoString) {
+        return isoString.slice(0, 16); // 'YYYY-MM-DDTHH:MM' 形式を抽出
+    }
+
+    // create_project用のtest関数(データをnew_projectに追加)
+    function test_create_project() {
+        newProject = {
+            name: 'Test Project',
+            description: 'This is a test project',
+            kpi: 50,
+            due_date: new Date().toISOString().slice(0, 16),
+            difficulty: 3
+        };
+    }
+
+    // create_pack用のtest関数(データをnew_packに追加)
+    function test_create_pack() {
+        newPack = Object.assign(newPack, {
+            project_id: 1,
+            plan_description: 'Test Plan',
+            plan_done: 0,
+            do_description: 'Test Do',
+            do_done: 0,
+            check_description: 'Test Check',
+            check_done: 0,
+            act_description: 'Test Act',
+            act_done: 0,
+        });
+    }
+
+    // create_link用のtest関数(データをnew_linkに追加)
+    function test_create_link() {
+        new_link = {
+            url: 'https://www.google.com',
+            description: 'Google',
+            stage: 'plan'
+        };
+    }
 
 let errors = [];
 const all_validation_fn = {
@@ -66,8 +113,9 @@ const all_validation_fn = {
         if (![0, 1].includes(pack.act_done)) {
             errors.push('Invalid act done value');
         }
-        if (isNaN(Date.parse(pack.due_date))) {
-            errors.push('Invalid pack due date');
+        const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/;
+        if (!isoDateRegex.test(pack.due_date)) {
+            errors.push('Invalid pack due date format. Must be ISO 8601 format.');
         }
         return errors;
     },
@@ -88,11 +136,20 @@ const all_validation_fn = {
     }
 };
 
+    const test_mode = true;
     let auth_login_result = 'Not logged in';
-    let auth_uid = null;
-    let auth_user_id = null;
+    // let auth_uid = null;
+    let auth_uid = "user1";
+    // let auth_user_id = null;
+    let auth_user_id = 1;
     let web_endpoint = 'http://localhost:8000';
     let web_data = [];
+    let new_link = {
+        url: '',
+        description: '',
+        stage: ''
+    };
+    // const { pack_id, url, description, stage, uid } = req.body;
 
     const auth_firebase_config = {
         apiKey: "AIzaSyBcOlIDP2KWbJuKM0WeMHNp-WvjTVfLt9Y",
@@ -119,7 +176,7 @@ const all_validation_fn = {
                 // await fetch_data();
             } else {
                 auth_login_result = 'Not logged in';
-                auth_uid = "";
+                auth_uid = test_mode ? "user1" :  null;
             }
         } catch (error) {
             console.error('Error during authentication:', error);
@@ -176,15 +233,12 @@ const all_validation_fn = {
         }
     }
 
+
     async function create_project() {
         try {
             console.log('Creating project:', newProject);
-            // uidがない場合はエラーで終了
-            if (!auth_uid) {
-                errors.push('Error creating project: No UID');
-                console.error('Error creating project: No UID');
-                return;
-            }
+            // uidがない場合はエラーで終了(ワンライナーで書く)
+            auth_uid ? null : (() => { errors.push('Error creating project: No UID'); console.error('Error creating project: No UID'); return; })();
             // all_validation_fnでチェック
             const valid_errors = all_validation_fn.validateProject(newProject);
             errors.push(...valid_errors);
@@ -202,7 +256,7 @@ const all_validation_fn = {
                     name: newProject.name,
                     description: newProject.description,
                     kpi: newProject.kpi,
-                    due_date: newProject.due_date,
+                    due_date: toISOStringFromDatetimeLocal(newProject.due_date),
                     difficulty: newProject.difficulty,
                     uid: auth_uid
                 })
@@ -220,6 +274,119 @@ const all_validation_fn = {
             console.error('Error creating project:', error);
         }
     }
+
+
+
+async function create_pack() {
+    try {
+        // newPackのdue_dateをISO8601形式に変換
+        // newPack.due_date = new Date(newPack.due_date).toISOString();
+        // valid
+        // auth_uidがない場合はエラーで終了(ワンライナーで書く)
+        auth_uid ? null : (() => { errors.push('Error creating pack: No UID'); console.error('Error creating pack: No UID'); return; })();
+        const valid_errors = all_validation_fn.validatePack(newPack);
+        errors.push(...valid_errors);
+        errors.length > 0 ? null : (() => { throw new Error('Error creating pack:', errors); })();
+
+
+        const response = await fetch(web_endpoint + '/create_packs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                project_id: newPack.project_id,
+                plan_description: newPack.plan_description,
+                plan_done: newPack.plan_done,
+                do_description: newPack.do_description,
+                do_done: newPack.do_done,
+                check_description: newPack.check_description,
+                check_done: newPack.check_done,
+                act_description: newPack.act_description,
+                act_done: newPack.act_done,
+
+                uid: auth_uid,
+                due_date: toISOStringFromDatetimeLocal(newPack.due_date),
+            })
+
+
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error creating pack:', errorData.errors);
+            return;
+        }
+
+        const data = await response.json();
+        console.log('Pack created with ID:', data.id);
+    } catch (error) {
+        console.error('Error creating pack:', error);
+    }
+}
+
+
+
+async function create_link(pack_id, stage) {
+    try {
+        console.log(
+            { 
+                pack_id: pack_id,
+                url: new_link.url,
+                description: new_link.description,
+                stage: stage,
+                uid: auth_uid
+            }
+        );
+        // valid
+        // auth_uidがない場合はエラーで終了(ワンライナーで書く)
+        console.log('1');
+        auth_uid ? null : (() => { throw new Error('auth_uid is required'); })();
+        console.log('2');
+        const valid_errors = all_validation_fn.validateLink(new_link);
+        console.log('3');
+        console.log('valid_errors', valid_errors);
+        console.log('4');
+        valid_errors.length > 0 ? (() => { throw new Error('Error creating link:', valid_errors); })() : null;
+        console.log('5');
+
+        const response = await fetch(web_endpoint + '/create_links', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                pack_id: pack_id,
+                url: new_link.url,
+                description: new_link.description,
+                stage: stage,
+                uid: auth_uid
+            })
+        });
+
+
+        if (!response.ok) {
+            console.log('6');
+            const errorData = await response.json();
+            console.error('Error creating link:', errorData.errors);
+            return;
+        }
+        const data = await response.json();
+        console.log('Link created with ID:', data.id);
+        // リンク追加後、入力をリセット
+        new_link = {
+            url: '',
+            description: '',
+            stage: ''
+        };
+
+    } catch (error) {
+        console.log('7');
+        console.log(error);
+        // console.error('Error creating link:', error);
+    }
+}
+
 
     let activeTab = 'projects';
     let languageData = {};
@@ -259,12 +426,15 @@ const all_validation_fn = {
     };
 
     // パックを追加する
-    const addPack = () => {
-        const newPackEntry = { ...newPack, id: Date.now() };
-        packs = [...packs, newPackEntry];
+    async function addPack() {
+    try {
+        // newPackにproject_idを追加
+        // newPack.project_id = projects[0].id;
+
+        await create_pack() 
+        packs = [...packs, newPack];
         // パック追加後、入力をリセット
         newPack = {
-            project_id: null,
             plan_description: '',
             plan_done: 0,
             do_description: '',
@@ -273,8 +443,11 @@ const all_validation_fn = {
             check_done: 0,
             act_description: '',
             act_done: 0,
-            due_date: new Date().toISOString(),
+            due_date: toDatetimeLocalFromISOString(new Date().toISOString()),
         };
+    } catch (error) {
+        console.error('Error adding pack:', error);
+    }
     };
 
     // let projects = [];
@@ -418,11 +591,20 @@ const packProgress = (pack_id) => {
     .progress-bar {
         display: flex;
     }
-
+.link-add {
+    /* 画面右端に */
+    display: flex;
+    justify-content: flex-end;
+}
 
 </style>
 
 <header>
+    <button on:click={test_create_project}>Test create project</button>
+    <button on:click={test_create_pack}>Test create pack</button>
+    <button on:click={test_create_link}>Test create link</button>
+    <button on:click={initializeDatabase}>initializeDatabase</button>
+
     {#if auth_login_result === 'Logged in'}
     <button on:click={auth_sign_out}>Logout</button>
     {:else}
@@ -491,7 +673,7 @@ auth_login_result: {auth_login_result}
 
 {#if activeTab === 'packs'}
     <h2>{languageData.createPack}</h2>
-    <select bind:value={newPack.projectId}>
+    <select bind:value={newPack.project_id}>
         {#each projects_and_packs as project}
             <option value={project.id}>{project.name}</option>
         {/each}
@@ -512,16 +694,27 @@ auth_login_result: {auth_login_result}
         <div class="pack">
                 <h3>{getProjectName(pack.project_id)}</h3>
                 {#each ['plan', 'do', 'check', 'act'] as stage}
-                    <div class:done={pack[`${stage}_done`]}>
-                        <button on:click={() => doneOrUndone(pack.id, stage)}>{languageData.done}</button>
-                        <p>{languageData[stage]}: {pack[`${stage}_description`]}</p>
-                    </div>
-                    {#if pack[stage].links.length > 0}
-                    {#each pack[stage].links as link}
+                <div class:done={pack[`${stage}_done`]}>
+                    <button on:click={() => doneOrUndone(pack.id, stage)}>{languageData.done}</button>
+                    <p>{languageData[stage]}: {pack[`${stage}_description`]}</p>
+                    <!-- design_link_create_modeがtrueの場合formを表示 -->
+                     <!-- button -->
+                    {#each (pack[stage].links || []) as link}
+                    <!-- {#each (pack[stage].links.length > 0 ? [] : pack[stage].links) as link} -->
                     <a href={link.url} target="_blank">{link.description}</a>
                     <span class="stars">{"★".repeat(link.stars)}</span>
                     {/each}
-                    {/if}
+                    <div class="link-add">
+                        <button class="link-create-mode" on:click={() => design_link_create_mode = !design_link_create_mode}>{languageData.addLink} {design_link_create_mode ? '▲' : '▼'}</button>
+                        <div class="link-form" style="display: {design_link_create_mode ? 'block' : 'none'}">
+                        <form on:submit|preventDefault={create_link(pack.id, stage)}>
+                            <input bind:value={new_link.url} type="text" placeholder={languageData.linkURL} minlength="1" maxlength="300">
+                            <input bind:value={new_link.description} type="text" placeholder={languageData.linkDescription} minlength="1" maxlength="300">
+                            <button type="submit">{languageData.addLink}</button>
+                        </form>
+                        </div>
+                    </div>
+                </div>
                 {/each}
                 <button on:click={() => deletePack(pack.id)}>{languageData.delete}</button>
             </div>

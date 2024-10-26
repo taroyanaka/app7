@@ -32,5 +32,7 @@
     "doDescription": "Do Description",
     "checkDescription": "Check Description",
     "actDescription": "Act Description",
-    "packDueDate": "Pack Due Date"
+    "packDueDate": "Pack Due Date",
+    "linkURL": "Link URL",
+    "linkDescription": "Link Description"
 }
