@@ -7,7 +7,8 @@
     // fetch => fetch関係の関数
 
 
-    // firebase authのコード移植してfetchのコード全般追加
+    // fetchのコード残り、deleteとupdate
+        // =>linksのupdateのエンドポイントは不要(deleteのみ追加)
 
     import { onMount } from "svelte";
     let design_link_create_mode = false;
