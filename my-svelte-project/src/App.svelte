@@ -9,6 +9,9 @@
 
     // NOT NULL制約つけるのサボってた結果create_linksのデバッグがクソだるくなった
         // init_dbでそれぞれのカラム精査して制約をつけられる限り付ける
+    // !!!CASCADE制約をつける(使ったことないけど試す)!!!
+        // project_idが削除されたらpacksも削除される
+        // pack_idが削除されたらlinksも削除される
     // fetchのコード残り、deleteとupdate
         // =>linksのupdateのエンドポイントは不要(deleteのみ追加)
 
