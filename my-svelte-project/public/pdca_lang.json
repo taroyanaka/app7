@@ -34,5 +34,8 @@
     "actDescription": "Act Description",
     "packDueDate": "Pack Due Date",
     "linkURL": "Link URL",
-    "linkDescription": "Link Description"
+    "linkDescription": "Link Description",
+    "update": "Update",
+    "editDescription": "Edit Description",
+    "editDueDate": "Edit Due Date"
 }

@@ -7,16 +7,106 @@
     // fetch => fetch関係の関数
 
 
-    // NOT NULL制約つけるのサボってた結果create_linksのデバッグがクソだるくなった
-        // init_dbでそれぞれのカラム精査して制約をつけられる限り付ける
-    // !!!CASCADE制約をつける(使ったことないけど試す)!!!
-        // project_idが削除されたらpacksも削除される
-        // pack_idが削除されたらlinksも削除される
+
     // fetchのコード残り、deleteとupdate
         // =>linksのupdateのエンドポイントは不要(deleteのみ追加)
 
     import { onMount } from "svelte";
     let design_link_create_mode = false;
+    let design_project_description_edit_mode = false;
+    let design_project_due_date_edit_mode = false;
+
+
+const sampleUIDs = [
+    'user1a34efgh5678ijkl9012mnop',
+    'user2a34uvwx5678yzab9012cdef',
+    'user3a34klmn5678opqr9012stuv'
+];
+
+async function test_sample_uids() {
+    auth_uid = sampleUIDs[0];
+    auth_user_id = 1;
+};
+
+    async function test_create_project(){
+
+        // auth_user_id = 1;
+        const nums = [
+            "44444",
+            "55555",
+            "66666",
+        ];
+        for (const num of nums) {
+            newProject = Object.assign(newProject, {
+                name: num + 'Test Project' + num,
+                description: num + 'Test Description' + num,
+                // kpiは0~100の間でランダム
+                kpi: Math.floor(Math.random() * 101),
+                // due_date: new Date().toISOString().slice(0, 16),
+                due_date: new Date().toISOString(),
+                // difficultyは1~5の間でランダム
+                difficulty: Math.floor(Math.random() * 5) + 1,
+            });
+            await create_project();
+        }
+        auth_user_id = 1;
+    }
+        // create_pack用のtest関数(データをnew_packに追加)
+    async function test_create_pack() {
+
+        const nums = [
+            "11111",
+            "22222",
+            "33333",
+        ];
+        for (const num of nums) {
+            newPack = Object.assign(newPack, {
+                project_id: 1,
+                plan_description: 'Test Plan' + num,
+                plan_done: 1,
+                do_description: 'Test Do' + num,
+                do_done: 0,
+                check_description: 'Test Check' + num,
+                check_done: 1,
+                act_description: 'Test Act' + num,
+                act_done: 0,
+                due_date: new Date().toISOString(),
+            });
+            await create_pack();
+        }
+        auth_user_id = 1;
+
+    }
+
+    // create_link用のtest関数(データをnew_linkに追加)
+    async function test_create_link() {
+
+        new_link = {
+            url: 'https://www.google.com',
+            description: 'Google',
+        };
+        create_link(1, 'plan');
+        new_link = {
+            url: 'https://www.yahoo.co.jp',
+            description: 'Yahoo',
+        };
+        create_link(1, 'plan');
+        new_link = {
+            url: 'https://www.bing.com',
+            description: 'Bing',
+        };
+        create_link(3, 'check');
+        auth_user_id = 1;
+    }
+
+    async function all_test_fn_exe(){
+        await test_create_project();
+        await test_create_pack();
+        await test_create_link();
+    }
+
+
+
 
     // input type="datetime-local"の値をと、
     // sqlite3のcreate_at(TEXT型)とupdate_at(TEXT型)に保存する際はISO8601形式で保存するため、
@@ -29,40 +119,7 @@
         return isoString.slice(0, 16); // 'YYYY-MM-DDTHH:MM' 形式を抽出
     }
 
-    // create_project用のtest関数(データをnew_projectに追加)
-    function test_create_project() {
-        newProject = {
-            name: 'Test Project',
-            description: 'This is a test project',
-            kpi: 50,
-            due_date: new Date().toISOString().slice(0, 16),
-            difficulty: 3
-        };
-    }
 
-    // create_pack用のtest関数(データをnew_packに追加)
-    function test_create_pack() {
-        newPack = Object.assign(newPack, {
-            project_id: 1,
-            plan_description: 'Test Plan',
-            plan_done: 0,
-            do_description: 'Test Do',
-            do_done: 0,
-            check_description: 'Test Check',
-            check_done: 0,
-            act_description: 'Test Act',
-            act_done: 0,
-        });
-    }
-
-    // create_link用のtest関数(データをnew_linkに追加)
-    function test_create_link() {
-        new_link = {
-            url: 'https://www.google.com',
-            description: 'Google',
-            stage: 'plan'
-        };
-    }
 
 let errors = [];
 const all_validation_fn = {
@@ -178,11 +235,11 @@ const all_validation_fn = {
             const auth_user = current_user;
             if (auth_user) {
                 auth_login_result = 'Logged in';
-                auth_uid = auth_user.uid;
-                // await fetch_data();
             } else {
                 auth_login_result = 'Not logged in';
-                auth_uid = test_mode ? "user1" :  null;
+                if(test_mode){
+                    auth_login_result = 'Logged in';
+                }
             }
         } catch (error) {
             console.error('Error during authentication:', error);
@@ -349,6 +406,8 @@ async function create_link(pack_id, stage) {
         console.log('1');
         auth_uid ? null : (() => { throw new Error('auth_uid is required'); })();
         console.log('2');
+        // new_linkのstageにstageを格納
+        new_link.stage = stage;
         const valid_errors = all_validation_fn.validateLink(new_link);
         console.log('3');
         console.log('valid_errors', valid_errors);
@@ -365,7 +424,7 @@ async function create_link(pack_id, stage) {
                 pack_id: pack_id,
                 url: new_link.url,
                 description: new_link.description,
-                stage: stage,
+                stage: new_link.stage,
                 uid: auth_uid
             })
         });
@@ -392,6 +451,182 @@ async function create_link(pack_id, stage) {
         // console.error('Error creating link:', error);
     }
 }
+
+
+
+
+async function fetch_delete_projects(project_id) {
+        try {
+            const response = await fetch(`${web_endpoint}/delete_projects`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    project_id: project_id,
+                    uid: auth_uid
+                })
+
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const result = await response.json();
+            console.log('Project successfully deleted:', result);
+        } catch (error) {
+            console.error('Error deleting project:', error);
+        }
+    }
+
+async function fetch_delete_packs(pack_id) {
+    try {
+        const response = await fetch(`${web_endpoint}/delete_packs`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                pack_id: pack_id,
+                uid: auth_uid,
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const result = await response.json();
+        console.log('Pack successfully deleted:', result);
+    } catch (error) {
+        console.error('Error deleting pack:', error);
+    }
+}
+
+async function fetch_delete_links(link_id) {
+    try {
+        const response = await fetch(`${web_endpoint}/delete_links`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                link_id: link_id,
+                uid: auth_uid,
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const result = await response.json();
+        console.log('Link successfully deleted:', result);
+    } catch (error) {
+        console.error('Error deleting link:', error);
+    }
+}
+
+// app.post('/update_projects', async (req, res) => {
+//     try {
+//         const { project_id, name, description, kpi, due_date, difficulty, uid } = req.body;
+//         const project = { name, description, kpi, due_date, difficulty };
+
+async function fetch_update_projects(project_id) {
+    try {
+        // validation
+        // auth_uidがない場合はエラーで終了(ワンライナーで書く)
+        auth_uid ? null : (() => { errors.push('Error updating project: No UID'); console.error('Error updating project: No UID'); return; })();
+        // idを指定してupdateProject
+        const updateProject = projects_and_packs.find(p => p.id === project_id);
+        // update_projectsをvalid
+        const valid_errors = all_validation_fn.validateProject(updateProject);
+        errors.push(...valid_errors);
+        // errorsがある場合はエラーで終了
+        if (errors.length > 0) {
+            console.error('Error updating project:', errors);
+            return;
+        }
+        const response = await fetch(`${web_endpoint}/update_projects`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                project_id: project_id,
+                name: updateProject.name,
+                description: updateProject.description,
+                kpi: updateProject.kpi,
+                due_date: toISOStringFromDatetimeLocal(updateProject.due_date),
+                difficulty: updateProject.difficulty,
+                uid: auth_uid
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const result = await response.json();
+        console.log('Project successfully updated:', result);
+    } catch (error) {
+        console.error('Error updating project:', error);
+    }
+    
+}
+
+// app.post('/update_packs', async (req, res) => {
+//     try {
+//         const { pack_id, project_id, plan_description, plan_done, do_description, do_done, check_description, check_done, act_description, act_done, due_date, uid } = req.body;
+//         let pack = { plan_description, plan_done, do_description, do_done, check_description, check_done, act_description, act_done, due_date };
+async function fetch_update_packs(pack_id) {
+    try {
+        // validation
+        // auth_uidがない場合はエラーで終了(ワンライナーで書く)
+        auth_uid ? null : (() => { errors.push('Error updating pack: No UID'); console.error('Error updating pack: No UID'); return; })();
+        // idを指定してupdatePack
+        const updatePack = packs.find(p => p.id === pack_id);
+        // update_packsをvalid
+        const valid_errors = all_validation_fn.validatePack(updatePack);
+        errors.push(...valid_errors);
+        // errorsがある場合はエラーで終了
+        if (errors.length > 0) {
+            console.error('Error updating pack:', errors);
+            return;
+        }
+        const response = await fetch(`${web_endpoint}/update_packs`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                pack_id: pack_id,
+                project_id: updatePack.project_id,
+                plan_description: updatePack.plan_description,
+                plan_done: updatePack.plan_done,
+                do_description: updatePack.do_description,
+                do_done: updatePack.do_done,
+                check_description: updatePack.check_description,
+                check_done: updatePack.check_done,
+                act_description: updatePack.act_description,
+                act_done: updatePack.act_done,
+                due_date: toISOStringFromDatetimeLocal(updatePack.due_date),
+                uid: auth_uid
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const result = await response.json();
+        console.log('Pack successfully updated:', result);
+    } catch (error) {
+        console.error('Error updating pack:', error);
+    }
+}
+        
 
 
     let activeTab = 'projects';
@@ -529,6 +764,7 @@ function doneOrUndone(packId, stage) {
 
     onMount(async () => {
         languageData = await loadTranslations();
+        await test_sample_uids();
         await fetch_data();
         await auth_check_login();
 
@@ -554,9 +790,7 @@ function doneOrUndone(packId, stage) {
     };
 
     // プロジェクトを削除する
-    const deleteProject = (projectId) => {
-        projects = projects.filter(project => project.id !== projectId);
-    };
+
 const packProgress = (pack_id) => {
                     const stages = ['plan', 'do', 'check', 'act'];
                     const pack = packs.find(pack => pack.id === pack_id);
@@ -564,11 +798,6 @@ const packProgress = (pack_id) => {
                     return (completedStages / stages.length) * 100;
                 };
 
-
-    // パックを削除する
-    const deletePack = (packId) => {
-        packs = packs.filter(pack => pack.id !== packId);
-    };
 
     // プロジェクトリストを並べ替える
     const sortedProjects = () => projects.sort((a, b) => {
@@ -602,6 +831,10 @@ const packProgress = (pack_id) => {
     display: flex;
     justify-content: flex-end;
 }
+.pack_delete{
+    display:  flex;
+    justify-content: flex-end;
+}
 
 </style>
 
@@ -609,6 +842,7 @@ const packProgress = (pack_id) => {
     <button on:click={test_create_project}>Test create project</button>
     <button on:click={test_create_pack}>Test create pack</button>
     <button on:click={test_create_link}>Test create link</button>
+    <button on:click={all_test_fn_exe}>All test functions</button>
     <button on:click={initializeDatabase}>initializeDatabase</button>
 
     {#if auth_login_result === 'Logged in'}
@@ -645,10 +879,42 @@ auth_login_result: {auth_login_result}
         {#each projects_and_packs as project}
             <div class="project">
                 <h3>{project.name}: user id: {project.user_id}</h3>
+                <!-- delete project ボタン -->
+                <button on:click={() => fetch_delete_projects(project.id)}>{languageData.delete}</button>
+                <!-- fetch_update_projects -->
+                <button on:click={() => fetch_update_projects(project.id)}>{languageData.update}</button>
                 <p>{project.description}</p>
+                <!-- show description edit form -->
+                 <!-- show button -->
+                <button on:click={() => design_project_description_edit_mode = !design_project_description_edit_mode}>{languageData.editDescription} {design_project_description_edit_mode ? '▲' : '▼'}</button>
+                {#if design_project_description_edit_mode}
+                <input type="text" value={project.description} on:input={(e) => project.description = e.target.value} />
+                {/if}
+
                 <p>KPI: {project.kpi}</p>
+                <!-- KPI add -->
+                <button on:click={() => project.kpi = Math.min(100, project.kpi + 1)}>+</button>
+                <!-- KPI subtract -->
+                <button on:click={() => project.kpi = Math.max(0, project.kpi - 1)}>-</button>
+
                 <p>Difficulty: <span class="stars">{"★".repeat(project.difficulty)}</span></p>
-                <p>Due Date: {formatDate(project.due_date)}</p>
+                <!-- Difficulty add button -->
+                <button on:click={() => project.difficulty = Math.min(5, project.difficulty + 1)}>+</button>
+                <!-- Difficulty subtract button -->
+                <button on:click={() => project.difficulty = Math.max(1, project.difficulty - 1)}>-</button>
+
+                <!-- <p>Due Date: {formatDate(project.due_date)}</p> -->
+                <p>Due Date: {project.due_date}</p>
+                <!-- due date edit -->
+                <button on:click={() => design_project_due_date_edit_mode = !design_project_due_date_edit_mode}>{languageData.editDueDate} {design_project_due_date_edit_mode ? '▲' : '▼'}</button>
+                {#if design_project_due_date_edit_mode}
+                <input type="datetime-local" value={project.due_date.slice(0, 16)} on:input={(e) => project.due_date = toDatetimeLocalFromISOString(e.target.value)} />
+                {/if}
+
+                <p>Progress: {projectProgress(project)}%</p>
+
+
+
                 <div class="progress-bar" style="width: {projectProgress(project)}%">
                     {projectProgress(project)}%
                     {#each Array(10) as _, i}
@@ -669,9 +935,6 @@ auth_login_result: {auth_login_result}
                         </div>
                     {/each}
                 </div>
-                <button on:click={() => deleteProject(project.id)} class="delete">
-                    {languageData.delete}
-                </button>
             </div>
         {/each}
     </div>
@@ -698,6 +961,11 @@ auth_login_result: {auth_login_result}
     <div class="pack-list">
         {#each packs as pack, index}
         <div class="pack">
+                <!-- fetch_delete_packs ボタン -->
+                <div class="pack_delete">
+                    <button on:click={() => fetch_delete_packs(pack.id)}>pack {languageData.delete}</button>
+                </div>
+
                 <h3>{getProjectName(pack.project_id)}</h3>
                 {#each ['plan', 'do', 'check', 'act'] as stage}
                 <div class:done={pack[`${stage}_done`]}>
@@ -708,7 +976,9 @@ auth_login_result: {auth_login_result}
                     {#each (pack[stage].links || []) as link}
                     <!-- {#each (pack[stage].links.length > 0 ? [] : pack[stage].links) as link} -->
                     <a href={link.url} target="_blank">{link.description}</a>
-                    <span class="stars">{"★".repeat(link.stars)}</span>
+                    <!-- link delete ボタン -->
+                    <button on:click={() => fetch_delete_links(link.id)}>{languageData.delete}</button>
+
                     {/each}
                     <div class="link-add">
                         <button class="link-create-mode" on:click={() => design_link_create_mode = !design_link_create_mode}>{languageData.addLink} {design_link_create_mode ? '▲' : '▼'}</button>
@@ -722,7 +992,6 @@ auth_login_result: {auth_login_result}
                     </div>
                 </div>
                 {/each}
-                <button on:click={() => deletePack(pack.id)}>{languageData.delete}</button>
             </div>
         {/each}
     </div>
@@ -740,3 +1009,5 @@ auth_login_result: {auth_login_result}
         {/each}
     </div>
 {/if}
+
+
