@@ -7,14 +7,11 @@
     // fetch => fetch関係の関数
 
 
-
-    // fetchのコード残り、deleteとupdate
-        // =>linksのupdateのエンドポイントは不要(deleteのみ追加)
-
     import { onMount } from "svelte";
     let design_link_create_mode = false;
     let design_project_description_edit_mode = false;
     let design_project_due_date_edit_mode = false;
+    let design_project_name_edit_mode = false;
 
 
 const sampleUIDs = [
@@ -879,6 +876,14 @@ auth_login_result: {auth_login_result}
         {#each projects_and_packs as project}
             <div class="project">
                 <h3>{project.name}: user id: {project.user_id}</h3>
+                <!-- design edit name -->
+                <button on:click={() => design_project_name_edit_mode = !design_project_name_edit_mode}>{languageData.editName} {design_project_name_edit_mode ? '▲' : '▼'}</button>
+                {#if design_project_name_edit_mode}
+                <input type="text" value={project.name} on:input={(e) => project.name = e.target.value} />
+                {/if}
+                
+
+
                 <!-- delete project ボタン -->
                 <button on:click={() => fetch_delete_projects(project.id)}>{languageData.delete}</button>
                 <!-- fetch_update_projects -->
