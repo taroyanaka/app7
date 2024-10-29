@@ -37,5 +37,6 @@
     "linkDescription": "Link Description",
     "update": "Update",
     "editDescription": "Edit Description",
-    "editDueDate": "Edit Due Date"
+    "editDueDate": "Edit Due Date",
+    "editName": "Edit Name"
 }
