@@ -332,12 +332,14 @@ const all_validation_fn = {
 };
 
 const test_mode = true;
+// const test_mode = false;
 let auth_login_result = 'Not logged in';
 let auth_uid = null;
 // let auth_uid = "user1";
 let auth_user_id = null;
 // let auth_user_id = 1;
-let web_endpoint = 'http://localhost:8000/app7';
+// let web_endpoint = 'http://localhost:8000/app7';
+let web_endpoint = 'https://cotton-concrete-catsup.glitch.me/app7';
 let web_data = [];
 let new_link = {
     url: '',
@@ -787,14 +789,14 @@ const sortedPacks = () => {
     <div>auth_login_result: {auth_login_result}</div>
     <div>auth_uid: {auth_uid}</div>
     <div>auth_user_id: {auth_user_id}</div>
-    <div>web_endpoint: {web_endpoint}</div>
+    <!-- <div>web_endpoint: {web_endpoint}</div> -->
 
     {#if test_mode}
-    <button on:click={test_create_project}>Test create project</button>
+    <!-- <button on:click={test_create_project}>Test create project</button>
     <button on:click={test_create_pack}>Test create pack</button>
     <button on:click={test_create_link}>Test create link</button>
     <button on:click={all_test_fn_exe}>All test functions</button>
-    <button on:click={initializeDatabase}>initializeDatabase</button>
+    <button on:click={initializeDatabase}>initializeDatabase</button> -->
     {/if}
 
     {#if auth_login_result === 'Logged in'}
@@ -899,6 +901,10 @@ const sortedPacks = () => {
 <div class="pack-list">
 {#each packs as pack, index}
 <div class="pack">
+    <!-- fetch_update_packs -->
+    <div class="pack_update">
+        <button on:click={() => fetch_update_packs(pack.id)}>pack {languageData.update}</button>
+    </div>
     <div class="pack_delete">
         <button on:click={() => fetch_delete_packs(pack.id)}>pack {languageData.delete}</button>
     </div>
