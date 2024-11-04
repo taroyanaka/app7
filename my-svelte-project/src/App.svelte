@@ -1,122 +1,257 @@
 <script>
-    // 命名規則(prefix)
-    // auth => authentication関係の変数と関数
-    // test => テスト用の変数と関数
-    // design => デザイン関係の変数と関数
-    // web => webデータの変数と関数
-    // fetch => fetch関係の関数
+// 命名規則(prefix)
+// auth => authentication関係の変数と関数
+// test => テスト用の変数と関数
+// design => デザイン関係の変数と関数
+// web => webデータの変数と関数
+// fetch => fetch関係の関数
 
-
-    import { onMount } from "svelte";
-    let design_link_create_mode = false;
-    let design_project_description_edit_mode = false;
-    let design_project_due_date_edit_mode = false;
-    let design_project_name_edit_mode = false;
-
+import { onMount } from "svelte";
+let design_link_create_mode = false;
+let design_project_description_edit_mode = false;
+let design_project_due_date_edit_mode = false;
+let design_project_name_edit_mode = false;
 
 const sampleUIDs = [
     'user1a34efgh5678ijkl9012mnop',
     'user2a34uvwx5678yzab9012cdef',
     'user3a34klmn5678opqr9012stuv'
 ];
-
 async function test_sample_uids() {
     auth_uid = sampleUIDs[0];
     auth_user_id = 1;
 };
+async function test_create_project(){
 
-    async function test_create_project(){
+    // auth_user_id = 1;
+    const nums = [
+        "44444",
+        "55555",
+        "66666",
+    ];
+    for (const num of nums) {
+        newProject = Object.assign(newProject, {
+            name: num + 'Test Project' + num,
+            description: num + 'Test Description' + num,
+            // kpiは0~100の間でランダム
+            kpi: Math.floor(Math.random() * 101),
+            // due_date: new Date().toISOString().slice(0, 16),
+            due_date: new Date().toISOString(),
+            // difficultyは1~5の間でランダム
+            difficulty: Math.floor(Math.random() * 5) + 1,
+        });
+        await create_project();
+    }
+    // auth_user_id = 1;
+}
+async function test_create_pack() {
+    const nums = [
+        "11111",
+        "22222",
+        "33333",
+    ];
+    for (const num of nums) {
+        newPack = Object.assign(newPack, {
+            project_id: 1,
+            plan_description: 'Test Plan' + num,
+            plan_done: 1,
+            do_description: 'Test Do' + num,
+            do_done: 0,
+            check_description: 'Test Check' + num,
+            check_done: 1,
+            act_description: 'Test Act' + num,
+            act_done: 0,
+            due_date: new Date().toISOString(),
+        });
+        await create_pack();
+    }
+    // auth_user_id = 1;
+}
+async function test_create_link() {
 
-        // auth_user_id = 1;
-        const nums = [
-            "44444",
-            "55555",
-            "66666",
-        ];
-        for (const num of nums) {
-            newProject = Object.assign(newProject, {
-                name: num + 'Test Project' + num,
-                description: num + 'Test Description' + num,
-                // kpiは0~100の間でランダム
-                kpi: Math.floor(Math.random() * 101),
-                // due_date: new Date().toISOString().slice(0, 16),
-                due_date: new Date().toISOString(),
-                // difficultyは1~5の間でランダム
-                difficulty: Math.floor(Math.random() * 5) + 1,
-            });
-            await create_project();
+    new_link = {
+        url: 'https://www.google.com',
+        description: 'Google',
+    };
+    create_link(1, 'plan');
+    new_link = {
+        url: 'https://www.yahoo.co.jp',
+        description: 'Yahoo',
+    };
+    create_link(1, 'plan');
+    new_link = {
+        url: 'https://www.bing.com',
+        description: 'Bing',
+    };
+    create_link(3, 'check');
+    // auth_user_id = 1;
+}
+async function create_project() {
+    try {
+        console.log('Creating project:', newProject);
+        // uidがない場合はエラーで終了(ワンライナーで書く)
+        auth_uid ? null : (() => { errors.push('Error creating project: No UID'); console.error('Error creating project: No UID'); return; })();
+        // all_validation_fnでチェック
+        const valid_errors = all_validation_fn.validateProject(newProject);
+        errors.push(...valid_errors);
+        // errorsがある場合はエラーで終了
+        if (errors.length > 0) {
+            console.error('Error creating project:', errors);
+            return;
         }
-        auth_user_id = 1;
-    }
-        // create_pack用のtest関数(データをnew_packに追加)
-    async function test_create_pack() {
+        const response = await fetch(`${web_endpoint}/create_projects`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: newProject.name,
+                description: newProject.description,
+                kpi: newProject.kpi,
+                due_date: toISOStringFromDatetimeLocal(newProject.due_date),
+                difficulty: newProject.difficulty,
+                uid: auth_uid
+            })
+        });
 
-        const nums = [
-            "11111",
-            "22222",
-            "33333",
-        ];
-        for (const num of nums) {
-            newPack = Object.assign(newPack, {
-                project_id: 1,
-                plan_description: 'Test Plan' + num,
-                plan_done: 1,
-                do_description: 'Test Do' + num,
-                do_done: 0,
-                check_description: 'Test Check' + num,
-                check_done: 1,
-                act_description: 'Test Act' + num,
-                act_done: 0,
-                due_date: new Date().toISOString(),
-            });
-            await create_pack();
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error creating project:', errorData.errors);
+            return;
         }
-        auth_user_id = 1;
 
+        const data = await response.json();
+        console.log('Project created with ID:', data.id);
+    } catch (error) {
+        console.error('Error creating project:', error);
     }
+}
 
-    // create_link用のtest関数(データをnew_linkに追加)
-    async function test_create_link() {
+async function create_pack() {
+    try {
+        // newPackのdue_dateをISO8601形式に変換
+        // newPack.due_date = new Date(newPack.due_date).toISOString();
+        // valid
+        // auth_uidがない場合はエラーで終了(ワンライナーで書く)
+        auth_uid ? null : (() => { errors.push('Error creating pack: No UID'); console.error('Error creating pack: No UID'); return; })();
+        const valid_errors = all_validation_fn.validatePack(newPack);
+        errors.push(...valid_errors);
+        errors.length > 0 ? null : (() => { throw new Error('Error creating pack:', errors); })();
 
-        new_link = {
-            url: 'https://www.google.com',
-            description: 'Google',
-        };
-        create_link(1, 'plan');
-        new_link = {
-            url: 'https://www.yahoo.co.jp',
-            description: 'Yahoo',
-        };
-        create_link(1, 'plan');
-        new_link = {
-            url: 'https://www.bing.com',
-            description: 'Bing',
-        };
-        create_link(3, 'check');
-        auth_user_id = 1;
+
+        const response = await fetch(web_endpoint + '/create_packs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                project_id: newPack.project_id,
+                plan_description: newPack.plan_description,
+                plan_done: newPack.plan_done,
+                do_description: newPack.do_description,
+                do_done: newPack.do_done,
+                check_description: newPack.check_description,
+                check_done: newPack.check_done,
+                act_description: newPack.act_description,
+                act_done: newPack.act_done,
+
+                uid: auth_uid,
+                due_date: toISOStringFromDatetimeLocal(newPack.due_date),
+            })
+
+
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error creating pack:', errorData.errors);
+            return;
+        }
+
+        const data = await response.json();
+        console.log('Pack created with ID:', data.id);
+    } catch (error) {
+        console.error('Error creating pack:', error);
     }
+}
 
-    async function all_test_fn_exe(){
-        await test_create_project();
-        await test_create_pack();
-        await test_create_link();
+async function create_link(pack_id, stage) {
+    try {
+        console.log(
+            { 
+                pack_id: pack_id,
+                url: new_link.url,
+                description: new_link.description,
+                stage: stage,
+                uid: auth_uid
+            }
+        );
+        // valid
+        // auth_uidがない場合はエラーで終了(ワンライナーで書く)
+        console.log('1');
+        auth_uid ? null : (() => { throw new Error('auth_uid is required'); })();
+        console.log('2');
+        // new_linkのstageにstageを格納
+        new_link.stage = stage;
+        const valid_errors = all_validation_fn.validateLink(new_link);
+        console.log('3');
+        console.log('valid_errors', valid_errors);
+        console.log('4');
+        valid_errors.length > 0 ? (() => { throw new Error('Error creating link:', valid_errors); })() : null;
+        console.log('5');
+
+        const response = await fetch(web_endpoint + '/create_links', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                pack_id: pack_id,
+                url: new_link.url,
+                description: new_link.description,
+                stage: new_link.stage,
+                uid: auth_uid
+            })
+        });
+
+
+        if (!response.ok) {
+            console.log('6');
+            const errorData = await response.json();
+            console.error('Error creating link:', errorData.errors);
+            return;
+        }
+        const data = await response.json();
+        console.log('Link created with ID:', data.id);
+        // リンク追加後、入力をリセット
+        new_link = {
+            url: '',
+            description: '',
+            stage: ''
+        };
+
+    } catch (error) {
+        console.log('7');
+        console.log(error);
+        // console.error('Error creating link:', error);
     }
+}
+async function all_test_fn_exe(){
+    await test_create_project();
+    await test_create_pack();
+    await test_create_link();
+}
 
-
-
-
+function toISOStringFromDatetimeLocal(datetimeLocalValue) {
     // input type="datetime-local"の値をと、
     // sqlite3のcreate_at(TEXT型)とupdate_at(TEXT型)に保存する際はISO8601形式で保存するため、
     // それぞれの関数を作成create_project, create_packの2つの関数で使用
-    function toISOStringFromDatetimeLocal(datetimeLocalValue) {
-        const date = new Date(datetimeLocalValue);
-        return date.toISOString();
-    }
-    function toDatetimeLocalFromISOString(isoString) {
-        return isoString.slice(0, 16); // 'YYYY-MM-DDTHH:MM' 形式を抽出
-    }
-
-
+    const date = new Date(datetimeLocalValue);
+    return date.toISOString();
+}
+function toDatetimeLocalFromISOString(isoString) {
+    return isoString.slice(0, 16); // 'YYYY-MM-DDTHH:MM' 形式を抽出
+}
 
 let errors = [];
 const all_validation_fn = {
@@ -196,261 +331,109 @@ const all_validation_fn = {
     }
 };
 
-    const test_mode = true;
-    let auth_login_result = 'Not logged in';
-    // let auth_uid = null;
-    let auth_uid = "user1";
-    // let auth_user_id = null;
-    let auth_user_id = 1;
-    let web_endpoint = 'http://localhost:8000';
-    let web_data = [];
-    let new_link = {
-        url: '',
-        description: '',
-        stage: ''
-    };
-    // const { pack_id, url, description, stage, uid } = req.body;
+const test_mode = true;
+let auth_login_result = 'Not logged in';
+let auth_uid = null;
+// let auth_uid = "user1";
+let auth_user_id = null;
+// let auth_user_id = 1;
+let web_endpoint = 'http://localhost:8000/app7';
+let web_data = [];
+let new_link = {
+    url: '',
+    description: '',
+    stage: ''
+};
 
-    const auth_firebase_config = {
-        apiKey: "AIzaSyBcOlIDP2KWbJuKM0WeMHNp-WvjTVfLt9Y",
-        authDomain: "p2auth-ea50a.firebaseapp.com",
-        projectId: "p2auth-ea50a",
-        storageBucket: "p2auth-ea50a.appspot.com",
-        messagingSenderId: "796225429484",
-        appId: "1:796225429484:web:ece56ef2fc0be28cd6eac9"
-    };
-    firebase.initializeApp(auth_firebase_config);
-    const auth_google_provider = new firebase.auth.GoogleAuthProvider();
+const auth_firebase_config = {
+    apiKey: "AIzaSyBcOlIDP2KWbJuKM0WeMHNp-WvjTVfLt9Y",
+    authDomain: "p2auth-ea50a.firebaseapp.com",
+    projectId: "p2auth-ea50a",
+    storageBucket: "p2auth-ea50a.appspot.com",
+    messagingSenderId: "796225429484",
+    appId: "1:796225429484:web:ece56ef2fc0be28cd6eac9"
+};
+firebase.initializeApp(auth_firebase_config);
+const auth_google_provider = new firebase.auth.GoogleAuthProvider();
 
-    async function auth_check_login() {
-        try {
-            const current_user = await new Promise((resolve, reject) => {
-                firebase.auth().onAuthStateChanged(resolve, reject);
-            });
-            // console.log('Current user:', current_user);
-        
-            const auth_user = current_user;
-            if (auth_user) {
-                auth_login_result = 'Logged in';
-            } else {
-                auth_login_result = 'Not logged in';
-                if(test_mode){
-                    auth_login_result = 'Logged in';
-                }
-            }
-        } catch (error) {
-            console.error('Error during authentication:', error);
-            auth_login_result = 'Authentication failed';
-            auth_uid = "";
+async function auth_check_login() {
+try {
+    const current_user = await new Promise((resolve, reject) => {
+        firebase.auth().onAuthStateChanged(resolve, reject);
+    });
+    console.log('Current user:', current_user);
+
+    const auth_user = current_user;
+    if (auth_user) {
+        auth_login_result = 'Logged in';
+        auth_uid = auth_user.uid;
+    } else {
+        auth_login_result = 'Not logged in';
+        if(test_mode){
+            auth_login_result = 'Logged in';
         }
     }
+} catch (error) {
+    console.error('Error during authentication:', error);
+    auth_login_result = 'Authentication failed';
+    auth_uid = "";
+}
+}
 
-    async function auth_google_login() {
-        try {
-            const result = await firebase.auth().signInWithPopup(auth_google_provider);
-            const auth_user = result.user;
-            auth_login_result = `Logged in as: ${auth_user.displayName}`;
-        } catch (error) {
-            console.error('Error during Google login:', error);
-            alert('Google login failed. ' + error.message);
-        }
-    }
-
-    async function auth_sign_out() {
-        try {
-            await firebase.auth().signOut();
-            auth_login_result = 'Not logged in';
-        } catch (error) {
-            console.error('Error during sign-out:', error);
-            alert('Sign out failed. ' + error.message);
-        }
-    }
-
-    // 以下をfetchする関数を追加
-    async function initializeDatabase() {
-        try {
-            const response = await fetch(web_endpoint + '/init_db', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ password: 'init' })
-            });
-            const data = await response.json();
-            console.log('Database initialized:', data);
-        } catch (error) {
-            console.error('Error initializing database:', error);
-        }
-    };
-
-    async function fetch_data() {
-        try {
-            const response = await fetch(web_endpoint + '/', {method: 'GET'});
-            web_data = await response.json();
-            [projects_and_packs, packs] = [web_data.projects_and_packs, web_data.packs];
-        } catch (error) {
-            console.error("Error fetching data:", error);
-        }
-    }
-
-
-    async function create_project() {
-        try {
-            console.log('Creating project:', newProject);
-            // uidがない場合はエラーで終了(ワンライナーで書く)
-            auth_uid ? null : (() => { errors.push('Error creating project: No UID'); console.error('Error creating project: No UID'); return; })();
-            // all_validation_fnでチェック
-            const valid_errors = all_validation_fn.validateProject(newProject);
-            errors.push(...valid_errors);
-            // errorsがある場合はエラーで終了
-            if (errors.length > 0) {
-                console.error('Error creating project:', errors);
-                return;
-            }
-            const response = await fetch(`${web_endpoint}/create_projects`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name: newProject.name,
-                    description: newProject.description,
-                    kpi: newProject.kpi,
-                    due_date: toISOStringFromDatetimeLocal(newProject.due_date),
-                    difficulty: newProject.difficulty,
-                    uid: auth_uid
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Error creating project:', errorData.errors);
-                return;
-            }
-
-            const data = await response.json();
-            console.log('Project created with ID:', data.id);
-        } catch (error) {
-            console.error('Error creating project:', error);
-        }
-    }
-
-
-
-async function create_pack() {
+async function auth_google_login() {
     try {
-        // newPackのdue_dateをISO8601形式に変換
-        // newPack.due_date = new Date(newPack.due_date).toISOString();
-        // valid
-        // auth_uidがない場合はエラーで終了(ワンライナーで書く)
-        auth_uid ? null : (() => { errors.push('Error creating pack: No UID'); console.error('Error creating pack: No UID'); return; })();
-        const valid_errors = all_validation_fn.validatePack(newPack);
-        errors.push(...valid_errors);
-        errors.length > 0 ? null : (() => { throw new Error('Error creating pack:', errors); })();
+        const result = await firebase.auth().signInWithPopup(auth_google_provider);
+        const auth_user = result.user;
+        auth_login_result = `Logged in as: ${auth_user.displayName}`;
+    } catch (error) {
+        console.error('Error during Google login:', error);
+        alert('Google login failed. ' + error.message);
+    }
+}
 
+async function auth_sign_out() {
+    try {
+        await firebase.auth().signOut();
+        auth_login_result = 'Not logged in';
+    } catch (error) {
+        console.error('Error during sign-out:', error);
+        alert('Sign out failed. ' + error.message);
+    }
+}
 
-        const response = await fetch(web_endpoint + '/create_packs', {
+async function initializeDatabase() {
+    try {
+        const response = await fetch(web_endpoint + '/init_db', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ 
-                project_id: newPack.project_id,
-                plan_description: newPack.plan_description,
-                plan_done: newPack.plan_done,
-                do_description: newPack.do_description,
-                do_done: newPack.do_done,
-                check_description: newPack.check_description,
-                check_done: newPack.check_done,
-                act_description: newPack.act_description,
-                act_done: newPack.act_done,
-
-                uid: auth_uid,
-                due_date: toISOStringFromDatetimeLocal(newPack.due_date),
-            })
-
-
+            body: JSON.stringify({ password: 'init' })
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Error creating pack:', errorData.errors);
-            return;
-        }
-
         const data = await response.json();
-        console.log('Pack created with ID:', data.id);
+        console.log('Database initialized:', data);
     } catch (error) {
-        console.error('Error creating pack:', error);
+        console.error('Error initializing database:', error);
     }
-}
+};
 
-
-
-async function create_link(pack_id, stage) {
+async function fetch_data() {
     try {
-        console.log(
-            { 
-                pack_id: pack_id,
-                url: new_link.url,
-                description: new_link.description,
-                stage: stage,
-                uid: auth_uid
-            }
-        );
-        // valid
-        // auth_uidがない場合はエラーで終了(ワンライナーで書く)
-        console.log('1');
-        auth_uid ? null : (() => { throw new Error('auth_uid is required'); })();
-        console.log('2');
-        // new_linkのstageにstageを格納
-        new_link.stage = stage;
-        const valid_errors = all_validation_fn.validateLink(new_link);
-        console.log('3');
-        console.log('valid_errors', valid_errors);
-        console.log('4');
-        valid_errors.length > 0 ? (() => { throw new Error('Error creating link:', valid_errors); })() : null;
-        console.log('5');
-
-        const response = await fetch(web_endpoint + '/create_links', {
+        console.log('Fetching data...', auth_uid);
+        const response = await fetch(web_endpoint + '/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                pack_id: pack_id,
-                url: new_link.url,
-                description: new_link.description,
-                stage: new_link.stage,
-                uid: auth_uid
-            })
+            body: JSON.stringify({ uid: auth_uid }) // リクエストボディにuidを追加
         });
-
-
-        if (!response.ok) {
-            console.log('6');
-            const errorData = await response.json();
-            console.error('Error creating link:', errorData.errors);
-            return;
-        }
-        const data = await response.json();
-        console.log('Link created with ID:', data.id);
-        // リンク追加後、入力をリセット
-        new_link = {
-            url: '',
-            description: '',
-            stage: ''
-        };
-
+        web_data = await response.json();
+        [projects_and_packs, packs, auth_user_id] =
+            [web_data.projects_and_packs, web_data.packs, web_data.user_id];
     } catch (error) {
-        console.log('7');
-        console.log(error);
-        // console.error('Error creating link:', error);
+        console.error("Error fetching data:", error);
     }
 }
-
-
-
 
 async function fetch_delete_projects(project_id) {
         try {
@@ -475,7 +458,7 @@ async function fetch_delete_projects(project_id) {
         } catch (error) {
             console.error('Error deleting project:', error);
         }
-    }
+}
 
 async function fetch_delete_packs(pack_id) {
     try {
@@ -525,11 +508,6 @@ async function fetch_delete_links(link_id) {
     }
 }
 
-// app.post('/update_projects', async (req, res) => {
-//     try {
-//         const { project_id, name, description, kpi, due_date, difficulty, uid } = req.body;
-//         const project = { name, description, kpi, due_date, difficulty };
-
 async function fetch_update_projects(project_id) {
     try {
         // validation
@@ -573,80 +551,99 @@ async function fetch_update_projects(project_id) {
     
 }
 
-// app.post('/update_packs', async (req, res) => {
-//     try {
-//         const { pack_id, project_id, plan_description, plan_done, do_description, do_done, check_description, check_done, act_description, act_done, due_date, uid } = req.body;
-//         let pack = { plan_description, plan_done, do_description, do_done, check_description, check_done, act_description, act_done, due_date };
 async function fetch_update_packs(pack_id) {
-    try {
-        // validation
-        // auth_uidがない場合はエラーで終了(ワンライナーで書く)
-        auth_uid ? null : (() => { errors.push('Error updating pack: No UID'); console.error('Error updating pack: No UID'); return; })();
-        // idを指定してupdatePack
-        const updatePack = packs.find(p => p.id === pack_id);
-        // update_packsをvalid
-        const valid_errors = all_validation_fn.validatePack(updatePack);
-        errors.push(...valid_errors);
-        // errorsがある場合はエラーで終了
-        if (errors.length > 0) {
-            console.error('Error updating pack:', errors);
-            return;
-        }
-        const response = await fetch(`${web_endpoint}/update_packs`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                pack_id: pack_id,
-                project_id: updatePack.project_id,
-                plan_description: updatePack.plan_description,
-                plan_done: updatePack.plan_done,
-                do_description: updatePack.do_description,
-                do_done: updatePack.do_done,
-                check_description: updatePack.check_description,
-                check_done: updatePack.check_done,
-                act_description: updatePack.act_description,
-                act_done: updatePack.act_done,
-                due_date: toISOStringFromDatetimeLocal(updatePack.due_date),
-                uid: auth_uid
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        const result = await response.json();
-        console.log('Pack successfully updated:', result);
-    } catch (error) {
-        console.error('Error updating pack:', error);
+try {
+    // auth_uidがない場合はエラーで終了(ワンライナーで書く)
+    auth_uid ? null : (() => { errors.push('Error updating pack: No UID'); console.error('Error updating pack: No UID'); return; })();
+    // idを指定してupdatePack
+    const updatePack = packs.find(p => p.id === pack_id);
+    // update_packsをvalid
+    const valid_errors = all_validation_fn.validatePack(updatePack);
+    errors.push(...valid_errors);
+    // errorsがある場合はエラーで終了
+    if (errors.length > 0) {
+        console.error('Error updating pack:', errors);
+        return;
     }
+    const response = await fetch(`${web_endpoint}/update_packs`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            pack_id: pack_id,
+            project_id: updatePack.project_id,
+            plan_description: updatePack.plan_description,
+            plan_done: updatePack.plan_done,
+            do_description: updatePack.do_description,
+            do_done: updatePack.do_done,
+            check_description: updatePack.check_description,
+            check_done: updatePack.check_done,
+            act_description: updatePack.act_description,
+            act_done: updatePack.act_done,
+            due_date: toISOStringFromDatetimeLocal(updatePack.due_date),
+            uid: auth_uid
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
+
+    const result = await response.json();
+    console.log('Pack successfully updated:', result);
+} catch (error) {
+    console.error('Error updating pack:', error);
 }
-        
+}
 
+let activeTab = 'projects';
+let languageData = {};
+let newProject = {
+    name: '',
+    description: '',
+    kpi: 0,
+    // due_dateをiso8601形式
+    due_date: new Date().toISOString().slice(0, 16), // ISO形式の一部を使用
+    difficulty: 3
+};
 
-    let activeTab = 'projects';
-    let languageData = {};
-    let newProject = {
-        name: '',
-        description: '',
-        kpi: 0,
-        // due_dateをiso8601形式
-        due_date: new Date().toISOString().slice(0, 16), // ISO形式の一部を使用
-        difficulty: 3
-    };
-        // プロジェクトを追加する
-    const addProject = () => {
-        const newProjectEntry = { ...newProject, id: Date.now() };
-        projects = [...projects, newProjectEntry];
-        // プロジェクト追加後、入力をリセット
-        // newProject = { user_id: 1, name: '', description: '', kpi: 0, due_date: new Date().toISOString(), difficulty: 3 };
-        newProject = { user_id: 1, name: '', description: '', kpi: 0, due_date: new Date().toISOString().slice(0, 16), difficulty: 3 };
-    };
+const addProject = () => {
+    const newProjectEntry = { ...newProject, id: Date.now() };
+    projects = [...projects, newProjectEntry];
+    // プロジェクト追加後、入力をリセット
+    // newProject = { user_id: 1, name: '', description: '', kpi: 0, due_date: new Date().toISOString(), difficulty: 3 };
+    newProject = { user_id: 1, name: '', description: '', kpi: 0, due_date: new Date().toISOString().slice(0, 16), difficulty: 3 };
+};
 
-    let newPack = {
-        project_id: null,
+let newPack = {
+    project_id: null,
+    plan_description: '',
+    plan_done: 0,
+    do_description: '',
+    do_done: 0,
+    check_description: '',
+    check_done: 0,
+    act_description: '',
+    act_done: 0,
+    due_date: new Date().toISOString().slice(0, 16) // ISO形式の一部を使用
+};
+
+const handleDueDateChange = (event) => {
+    const date = new Date(event.target.value);
+    newPack.due_date = date.toISOString();
+};
+
+// パックを追加する
+async function addPack() {
+try {
+    // newPackにproject_idを追加
+    // newPack.project_id = projects[0].id;
+
+    await create_pack() 
+    packs = [...packs, newPack];
+    // パック追加後、入力をリセット
+    newPack = {
         plan_description: '',
         plan_done: 0,
         do_description: '',
@@ -655,44 +652,17 @@ async function fetch_update_packs(pack_id) {
         check_done: 0,
         act_description: '',
         act_done: 0,
-        due_date: new Date().toISOString().slice(0, 16) // ISO形式の一部を使用
+        due_date: toDatetimeLocalFromISOString(new Date().toISOString()),
     };
+} catch (error) {
+    console.error('Error adding pack:', error);
+}
+};
 
-    const handleDueDateChange = (event) => {
-        const date = new Date(event.target.value);
-        newPack.due_date = date.toISOString();
-    };
-
-    // パックを追加する
-    async function addPack() {
-    try {
-        // newPackにproject_idを追加
-        // newPack.project_id = projects[0].id;
-
-        await create_pack() 
-        packs = [...packs, newPack];
-        // パック追加後、入力をリセット
-        newPack = {
-            plan_description: '',
-            plan_done: 0,
-            do_description: '',
-            do_done: 0,
-            check_description: '',
-            check_done: 0,
-            act_description: '',
-            act_done: 0,
-            due_date: toDatetimeLocalFromISOString(new Date().toISOString()),
-        };
-    } catch (error) {
-        console.error('Error adding pack:', error);
-    }
-    };
-
-    // let projects = [];
-    let packs = [];
-    let projects_and_packs = [];
-    let sortDirection = { projects: 'asc', packs: 'asc' };
-
+// let projects = [];
+let packs = [];
+let projects_and_packs = [];
+let sortDirection = { projects: 'asc', packs: 'asc' };
 
 function doneOrUndone(packId, stage) {
     // projects_and_packsの該当のpackのdoneを更新
@@ -733,98 +703,77 @@ function doneOrUndone(packId, stage) {
     }
 };
 
-    // projectProgress
-    const projectProgress = (project) => {
-        const packs = project.packs;
-        const totalPacks = packs.filter(pack => pack.project_id === project.id).length;
-        // const donePacks = packs.filter(pack => pack.project_id === project.id && pack.plan.done && pack.do.done && pack.check.done && pack.act.done).length;
-        const donePacks = packs.filter(pack => pack.project_id === project.id && pack.plan_done && pack.do_done && pack.check_done && pack.act_done).length;
-        // console.log("totalPacks", totalPacks);
-        // console.log("donePacks", donePacks);
-        const res = totalPacks === 0 ? 0 : Math.round(donePacks / totalPacks * 100);
-        // console.log("res", res);
-        return res;
-    };
+const projectProgress = (project) => {
+    const packs = project.packs;
+    const totalPacks = packs.filter(pack => pack.project_id === project.id).length;
+    // const donePacks = packs.filter(pack => pack.project_id === project.id && pack.plan.done && pack.do.done && pack.check.done && pack.act.done).length;
+    const donePacks = packs.filter(pack => pack.project_id === project.id && pack.plan_done && pack.do_done && pack.check_done && pack.act_done).length;
+    // console.log("totalPacks", totalPacks);
+    // console.log("donePacks", donePacks);
+    const res = totalPacks === 0 ? 0 : Math.round(donePacks / totalPacks * 100);
+    // console.log("res", res);
+    return res;
+};
 
-    const loadTranslations = async () => {
-        const response = await fetch('pdca_lang.json');
-        return await response.json();
-    };
+const loadTranslations = async () => {
+    const response = await fetch('pdca_lang.json');
+    return await response.json();
+};
 
+$: (async () => {
 
-    $: (async () => {
-        // console.log("projects", projects);
-        // console.log("packs", packs);
-        // await get_web_data();
-        // sortedPacks();
-    })();
+})();
 
-    onMount(async () => {
-        languageData = await loadTranslations();
-        await test_sample_uids();
-        await fetch_data();
-        await auth_check_login();
+onMount(async () => {
+    languageData = await loadTranslations();
+    // await test_sample_uids();
+    await auth_check_login();
+    await fetch_data();
 
-        // 初回ロード時に空の状態で開始
-        // projects = [];
-        // packs = [];
-    });
+});
 
-    const setActiveTab = (tab) => activeTab = tab;
+const setActiveTab = (tab) => activeTab = tab;
 
-    const formatDate = (hours) => {
-        const date = new Date();
-        date.setHours(date.getHours() + hours);
-        return date.toLocaleString();
-    };
-
-    // const getPacksByProject = (projectId) => packs.filter(pack => pack.projectId === projectId);
-
-    const getProjectName = (projectId) => {
-        // const project = projects.find(p => p.id === projectId);
-        const project = projects_and_packs.find(p => p.id === projectId);
-        return project ? project.name : '';
-    };
-
-    // プロジェクトを削除する
+const getProjectName = (projectId) => {
+    // const project = projects.find(p => p.id === projectId);
+    const project = projects_and_packs.find(p => p.id === projectId);
+    return project ? project.name : '';
+};
 
 const packProgress = (pack_id) => {
-                    const stages = ['plan', 'do', 'check', 'act'];
-                    const pack = packs.find(pack => pack.id === pack_id);
-                    const completedStages = stages.filter(stage => pack[stage].done).length;
-                    return (completedStages / stages.length) * 100;
-                };
+    const stages = ['plan', 'do', 'check', 'act'];
+    const pack = packs.find(pack => pack.id === pack_id);
+    const completedStages = stages.filter(stage => pack[stage].done).length;
+    return (completedStages / stages.length) * 100;
+};
 
+// プロジェクトリストを並べ替える
+const sortedProjects = () => projects.sort((a, b) => {
+    const direction = sortDirection.projects === 'asc' ? 1 : -1;
+    return a.name.localeCompare(b.name) * direction;
+});
 
-    // プロジェクトリストを並べ替える
-    const sortedProjects = () => projects.sort((a, b) => {
-        const direction = sortDirection.projects === 'asc' ? 1 : -1;
-        return a.name.localeCompare(b.name) * direction;
-    });
-
-    // パックリストを並べ替える
-    const sortedPacks = () => {
-        packs = packs.sort((a, b) => {
-            const direction = sortDirection.packs === 'asc' ? 1 : -1;
-            return (a.id - b.id) * direction;
-        })
-    };
+// パックリストを並べ替える
+const sortedPacks = () => {
+    packs = packs.sort((a, b) => {
+        const direction = sortDirection.packs === 'asc' ? 1 : -1;
+        return (a.id - b.id) * direction;
+    })
+};
 
 </script>
 
 <style>
-    .done {
-        background-color: #f0f0f0;
-    }
-    .stars {
-        color: gold;
-    }
-    /* .filledのspanをinlineにする */
-    .progress-bar {
-        display: flex;
-    }
+.done {
+    background-color: #f0f0f0;
+}
+.stars {
+    color: gold;
+}
+.progress-bar {
+    display: flex;
+}
 .link-add {
-    /* 画面右端に */
     display: flex;
     justify-content: flex-end;
 }
@@ -832,22 +781,28 @@ const packProgress = (pack_id) => {
     display:  flex;
     justify-content: flex-end;
 }
-
 </style>
 
 <header>
+    <div>auth_login_result: {auth_login_result}</div>
+    <div>auth_uid: {auth_uid}</div>
+    <div>auth_user_id: {auth_user_id}</div>
+    <div>web_endpoint: {web_endpoint}</div>
+
+    {#if test_mode}
     <button on:click={test_create_project}>Test create project</button>
     <button on:click={test_create_pack}>Test create pack</button>
     <button on:click={test_create_link}>Test create link</button>
     <button on:click={all_test_fn_exe}>All test functions</button>
     <button on:click={initializeDatabase}>initializeDatabase</button>
+    {/if}
 
     {#if auth_login_result === 'Logged in'}
     <button on:click={auth_sign_out}>Logout</button>
     {:else}
     <button on:click={auth_google_login}>Login</button>
     {/if}
-auth_login_result: {auth_login_result}
+    auth_login_result: {auth_login_result}
 </header>
 
 <nav>
@@ -857,162 +812,133 @@ auth_login_result: {auth_login_result}
 </nav>
 
 {#if activeTab === 'projects'}
-    <button on:click={initializeDatabase}>Initialize Database</button>
     <button on:click={fetch_data}>Fetch Data</button>
     <h2>{languageData.createProject}</h2>
 
     {#if auth_login_result === 'Logged in'  && auth_uid !== null}
-    <input bind:value={newProject.name} type="text" placeholder={languageData.projectName} maxlength="100">
-    <input bind:value={newProject.description} type="text" placeholder={languageData.projectDescription} maxlength="200">
-    <input bind:value={newProject.kpi} type="number" placeholder={languageData.projectKPI} min="0">
-    <input bind:value={newProject.due_date} type="datetime-local" placeholder={languageData.projectDueDate}>
-    <input bind:value={newProject.difficulty} type="number" placeholder={languageData.projectDifficulty} min="1" max="5">
+    <div>name: <input bind:value={newProject.name} type="text" placeholder={languageData.projectName} maxlength="100"></div>
+    <div>description: <input bind:value={newProject.description} type="text" placeholder={languageData.projectDescription} maxlength="200"></div>
+    <div>kpi: <input bind:value={newProject.kpi} type="number" placeholder={languageData.projectKPI} min="0"></div>
+    <div>due_date: <input bind:value={newProject.due_date} type="datetime-local" placeholder={languageData.projectDueDate}></div>
+    <div>difficulty: <input bind:value={newProject.difficulty} type="number" placeholder={languageData.projectDifficulty} min="1" max="5"></div>
     <button on:click={create_project}>{languageData.addProject}</button>
     {/if}
 
     <h2>{languageData.existingProjects}</h2>
     <div class="project-list">
-        <!-- {#each sortedProjects() as project} -->
         {#each projects_and_packs as project}
-            <div class="project">
-                <h3>{project.name}: user id: {project.user_id}</h3>
-                <!-- design edit name -->
-                <button on:click={() => design_project_name_edit_mode = !design_project_name_edit_mode}>{languageData.editName} {design_project_name_edit_mode ? '▲' : '▼'}</button>
-                {#if design_project_name_edit_mode}
-                <input type="text" value={project.name} on:input={(e) => project.name = e.target.value} />
-                {/if}
-                
-
-
-                <!-- delete project ボタン -->
-                <button on:click={() => fetch_delete_projects(project.id)}>{languageData.delete}</button>
-                <!-- fetch_update_projects -->
-                <button on:click={() => fetch_update_projects(project.id)}>{languageData.update}</button>
-                <p>{project.description}</p>
-                <!-- show description edit form -->
-                 <!-- show button -->
-                <button on:click={() => design_project_description_edit_mode = !design_project_description_edit_mode}>{languageData.editDescription} {design_project_description_edit_mode ? '▲' : '▼'}</button>
-                {#if design_project_description_edit_mode}
-                <input type="text" value={project.description} on:input={(e) => project.description = e.target.value} />
-                {/if}
-
-                <p>KPI: {project.kpi}</p>
-                <!-- KPI add -->
-                <button on:click={() => project.kpi = Math.min(100, project.kpi + 1)}>+</button>
-                <!-- KPI subtract -->
-                <button on:click={() => project.kpi = Math.max(0, project.kpi - 1)}>-</button>
-
-                <p>Difficulty: <span class="stars">{"★".repeat(project.difficulty)}</span></p>
-                <!-- Difficulty add button -->
-                <button on:click={() => project.difficulty = Math.min(5, project.difficulty + 1)}>+</button>
-                <!-- Difficulty subtract button -->
-                <button on:click={() => project.difficulty = Math.max(1, project.difficulty - 1)}>-</button>
-
-                <!-- <p>Due Date: {formatDate(project.due_date)}</p> -->
-                <p>Due Date: {project.due_date}</p>
-                <!-- due date edit -->
-                <button on:click={() => design_project_due_date_edit_mode = !design_project_due_date_edit_mode}>{languageData.editDueDate} {design_project_due_date_edit_mode ? '▲' : '▼'}</button>
-                {#if design_project_due_date_edit_mode}
-                <input type="datetime-local" value={project.due_date.slice(0, 16)} on:input={(e) => project.due_date = toDatetimeLocalFromISOString(e.target.value)} />
-                {/if}
-
-                <p>Progress: {projectProgress(project)}%</p>
-
-
-
-                <div class="progress-bar" style="width: {projectProgress(project)}%">
-                    {projectProgress(project)}%
-                    {#each Array(10) as _, i}
-                        <span class={projectProgress(project) >= i * 10 ? 'filled' : ''}>
-                            {projectProgress(project) >= i * 10 ? '●' : '○'}
-                        </span>
-                    {/each}
-                </div>
-                <div class="project-summary">
-                    <h4>{languageData.packsSummary}</h4>
-                    {#each project.packs as pack}
-                        <div class="pack-summary">
-                            {#each ['plan', 'do', 'check', 'act'] as stage}
-                                <span class:done={pack[`${stage}_done`]}>
-                                    {languageData[stage]}: {pack[`${stage}_description`]}
-                                </span>
-                            {/each}
-                        </div>
-                    {/each}
-                </div>
+        <div class="project">
+            <h3>{project.name}: user id: {project.user_id}</h3>
+            <button on:click={() => design_project_name_edit_mode = !design_project_name_edit_mode}>{languageData.editName} {design_project_name_edit_mode ? '▲' : '▼'}</button>
+            {#if design_project_name_edit_mode}
+            <input type="text" value={project.name} on:input={(e) => project.name = e.target.value} />
+            {/if}
+            <button on:click={() => fetch_delete_projects(project.id)}>{languageData.delete}</button>
+            <button on:click={() => fetch_update_projects(project.id)}>{languageData.update}</button>
+            <p>{project.description}</p>
+            <button on:click={() => design_project_description_edit_mode = !design_project_description_edit_mode}>{languageData.editDescription} {design_project_description_edit_mode ? '▲' : '▼'}</button>
+            {#if design_project_description_edit_mode}
+            <input type="text" value={project.description} on:input={(e) => project.description = e.target.value} />
+            {/if}
+            <p>KPI: {project.kpi}</p>
+            <button on:click={() => project.kpi = Math.min(100, project.kpi + 1)}>+</button>
+            <button on:click={() => project.kpi = Math.max(0, project.kpi - 1)}>-</button>
+            <p>Difficulty: <span class="stars">{"★".repeat(project.difficulty)}</span></p>
+            <button on:click={() => project.difficulty = Math.min(5, project.difficulty + 1)}>+</button>
+            <button on:click={() => project.difficulty = Math.max(1, project.difficulty - 1)}>-</button>
+            <p>Due Date: {project.due_date}</p>
+            <button on:click={() => design_project_due_date_edit_mode = !design_project_due_date_edit_mode}>{languageData.editDueDate} {design_project_due_date_edit_mode ? '▲' : '▼'}</button>
+            {#if design_project_due_date_edit_mode}
+            <input type="datetime-local" value={project.due_date.slice(0, 16)} on:input={(e) => project.due_date = toDatetimeLocalFromISOString(e.target.value)} />
+            {/if}
+            <p>Progress: {projectProgress(project)}%</p>
+            <div class="progress-bar" style="width: {projectProgress(project)}%">
+                {projectProgress(project)}%
+                {#each Array(10) as _, i}
+                    <span class={projectProgress(project) >= i * 10 ? 'filled' : ''}>
+                        {projectProgress(project) >= i * 10 ? '●' : '○'}
+                    </span>
+                {/each}
             </div>
+            <div class="project-summary">
+                <h4>{languageData.packsSummary}</h4>
+                {#each project.packs as pack}
+                    <div class="pack-summary">
+                        {#each ['plan', 'do', 'check', 'act'] as stage}
+                            <span class:done={pack[`${stage}_done`]}>
+                                {languageData[stage]}: {pack[`${stage}_description`]}
+                            </span>
+                        {/each}
+                    </div>
+                {/each}
+            </div>
+        </div>
         {/each}
     </div>
 {/if}
 
 {#if activeTab === 'packs'}
-    <h2>{languageData.createPack}</h2>
-    <select bind:value={newPack.project_id}>
-        {#each projects_and_packs as project}
-            <option value={project.id}>{project.name}</option>
-        {/each}
-    </select>
+<h2>{languageData.createPack}</h2>
+<select bind:value={newPack.project_id}>
+    {#each projects_and_packs as project}
+    <option value={project.id}>{project.name}</option>
+    {/each}
+</select>
 
- <input bind:value={newPack.plan_description} type="text" placeholder={languageData.planDescription} maxlength="300">
- <input bind:value={newPack.do_description} type="text" placeholder={languageData.doDescription} maxlength="300">
- <input bind:value={newPack.check_description} type="text" placeholder={languageData.checkDescription} maxlength="300">
- <input bind:value={newPack.act_description} type="text" placeholder={languageData.actDescription} maxlength="300">
- <!-- <input bind:value={newPack.due_date} type="datetime-local" placeholder={languageData.packDueDate}> -->
- <input bind:value={newPack.due_date} type="datetime-local" placeholder={languageData.packDueDate} on:change={handleDueDateChange}>
-
+<div>
+    <div>pack plan_description: <input bind:value={newPack.plan_description} type="text" placeholder={languageData.planDescription} maxlength="300"></div>
+    <div>pack do_description: <input bind:value={newPack.do_description} type="text" placeholder={languageData.doDescription} maxlength="300"></div>
+    <div>pack check_description: <input bind:value={newPack.check_description} type="text" placeholder={languageData.checkDescription} maxlength="300"></div>
+    <div>pack act_description: <input bind:value={newPack.act_description} type="text" placeholder={languageData.actDescription} maxlength="300"></div>
+    <!-- <input bind:value={newPack.due_date} type="datetime-local" placeholder={languageData.packDueDate}> -->
+    <input bind:value={newPack.due_date} type="datetime-local" placeholder={languageData.packDueDate} on:change={handleDueDateChange}>
     <button on:click={addPack}>{languageData.addPack}</button>
+</div>
 
-    <h2>{languageData.existingPacks}</h2>
-    <div class="pack-list">
-        {#each packs as pack, index}
-        <div class="pack">
-                <!-- fetch_delete_packs ボタン -->
-                <div class="pack_delete">
-                    <button on:click={() => fetch_delete_packs(pack.id)}>pack {languageData.delete}</button>
-                </div>
-
-                <h3>{getProjectName(pack.project_id)}</h3>
-                {#each ['plan', 'do', 'check', 'act'] as stage}
-                <div class:done={pack[`${stage}_done`]}>
-                    <button on:click={() => doneOrUndone(pack.id, stage)}>{languageData.done}</button>
-                    <p>{languageData[stage]}: {pack[`${stage}_description`]}</p>
-                    <!-- design_link_create_modeがtrueの場合formを表示 -->
-                     <!-- button -->
-                    {#each (pack[stage].links || []) as link}
-                    <!-- {#each (pack[stage].links.length > 0 ? [] : pack[stage].links) as link} -->
-                    <a href={link.url} target="_blank">{link.description}</a>
-                    <!-- link delete ボタン -->
-                    <button on:click={() => fetch_delete_links(link.id)}>{languageData.delete}</button>
-
-                    {/each}
-                    <div class="link-add">
-                        <button class="link-create-mode" on:click={() => design_link_create_mode = !design_link_create_mode}>{languageData.addLink} {design_link_create_mode ? '▲' : '▼'}</button>
-                        <div class="link-form" style="display: {design_link_create_mode ? 'block' : 'none'}">
-                        <form on:submit|preventDefault={create_link(pack.id, stage)}>
-                            <input bind:value={new_link.url} type="text" placeholder={languageData.linkURL} minlength="1" maxlength="300">
-                            <input bind:value={new_link.description} type="text" placeholder={languageData.linkDescription} minlength="1" maxlength="300">
-                            <button type="submit">{languageData.addLink}</button>
-                        </form>
-                        </div>
-                    </div>
-                </div>
-                {/each}
-            </div>
-        {/each}
+<h2>{languageData.existingPacks}</h2>
+<div class="pack-list">
+{#each packs as pack, index}
+<div class="pack">
+    <div class="pack_delete">
+        <button on:click={() => fetch_delete_packs(pack.id)}>pack {languageData.delete}</button>
     </div>
+
+    <h3>{getProjectName(pack.project_id)}</h3>
+    {#each ['plan', 'do', 'check', 'act'] as stage}
+    <div class:done={pack[`${stage}_done`]}>
+        <button on:click={() => doneOrUndone(pack.id, stage)}>{languageData.done}</button>
+        <p>{languageData[stage]}: {pack[`${stage}_description`]}</p>
+        {#each (pack[stage].links || []) as link}
+        <a href={link.url} target="_blank">{link.description}</a>
+        <button on:click={() => fetch_delete_links(link.id)}>{languageData.delete}</button>
+        {/each}
+
+        <div class="link-add">
+            <button class="link-create-mode" on:click={() => design_link_create_mode = !design_link_create_mode}>{languageData.addLink} {design_link_create_mode ? '▲' : '▼'}</button>
+            <div class="link-form" style="display: {design_link_create_mode ? 'block' : 'none'}">
+            <form on:submit|preventDefault={create_link(pack.id, stage)}>
+                <input bind:value={new_link.url} type="text" placeholder={languageData.linkURL} minlength="1" maxlength="300">
+                <input bind:value={new_link.description} type="text" placeholder={languageData.linkDescription} minlength="1" maxlength="300">
+                <button type="submit">{languageData.addLink}</button>
+            </form>
+            </div>
+        </div>
+    </div>
+    {/each}
+</div>
+{/each}
+</div>
 {/if}
 
 {#if activeTab === 'progress'}
     <h2>{languageData.progress}</h2>
     <div class="progress">
         {#each projects_and_packs as project}
-            <div class="progress-item">
-                <h3>{project.name}</h3>
-                <progress max="100" value={projectProgress(project)}></progress>
-                <div>{projectProgress(project)}%</div>
-            </div>
+        <div class="progress-item">
+            <h3>{project.name}</h3>
+            <progress max="100" value={projectProgress(project)}></progress>
+            <div>{projectProgress(project)}%</div>
+        </div>
         {/each}
     </div>
 {/if}
-
-
