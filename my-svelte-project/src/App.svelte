@@ -751,19 +751,24 @@ const packProgress = (pack_id) => {
     return (completedStages / stages.length) * 100;
 };
 
-// プロジェクトリストを並べ替える
-const sortedProjects = () => projects.sort((a, b) => {
-    const direction = sortDirection.projects === 'asc' ? 1 : -1;
-    return a.name.localeCompare(b.name) * direction;
-});
-
-// パックリストを並べ替える
-const sortedPacks = () => {
-    packs = packs.sort((a, b) => {
-        const direction = sortDirection.packs === 'asc' ? 1 : -1;
-        return (a.id - b.id) * direction;
-    })
+const sortedProjects = (Sort_By_Asc_Or_Desc="asc") => {
+    // Sort_By_Asc_Or_Descが"asc"の場合は昇順、"desc"の場合は降順、それ以外の場合早期リターン
+    if (Sort_By_Asc_Or_Desc !== 'asc' && Sort_By_Asc_Or_Desc !== 'desc') {return}
+    const new_projects_and_packs = projects_and_packs.sort((a, b) => {
+        const direction = sortDirection.projects === Sort_By_Asc_Or_Desc ? 1 : -1;
+        return direction * a.name.localeCompare(b.name);
+    });
+    projects_and_packs = [...new_projects_and_packs];
 };
+const sortPacks = (Sort_By_Asc_Or_Desc="asc") => {
+    if(Sort_By_Asc_Or_Desc !== 'asc' && Sort_By_Asc_Or_Desc !== 'desc'){return}
+    const new_packs = packs.sort((a, b) => {
+        const direction = sortDirection.packs === Sort_By_Asc_Or_Desc ? 1 : -1;
+        return direction * a.plan_description.localeCompare(b.plan_description);
+    });
+    packs = [...new_packs];
+};
+
 
 </script>
 
@@ -829,6 +834,8 @@ const sortedPacks = () => {
     {/if}
 
     <h2>{languageData.existingProjects}</h2>
+    <button on:click={() => sortedProjects('asc')}>Sort by name ▲</button>
+    <button on:click={() => sortedProjects('desc')}>Sort by name ▼</button>
     <div class="project-list">
         {#each projects_and_packs as project}
         <div class="project">
@@ -900,6 +907,8 @@ const sortedPacks = () => {
 </div>
 
 <h2>{languageData.existingPacks}</h2>
+<button on:click={() => sortPacks('asc')}>Sort by plan ▲</button>
+<button on:click={() => sortPacks('desc')}>Sort by plan ▼</button>
 <div class="pack-list">
 {#each packs as pack, index}
 <div class="pack">
