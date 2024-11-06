@@ -454,6 +454,8 @@ async function fetch_delete_projects(project_id) {
 
             const result = await response.json();
             console.log('Project successfully deleted:', result);
+            // successならfetch_data
+            await fetch_data();
         } catch (error) {
             console.error('Error deleting project:', error);
         }
@@ -478,6 +480,7 @@ async function fetch_delete_packs(pack_id) {
 
         const result = await response.json();
         console.log('Pack successfully deleted:', result);
+        await fetch_data();
     } catch (error) {
         console.error('Error deleting pack:', error);
     }
@@ -502,6 +505,7 @@ async function fetch_delete_links(link_id) {
 
         const result = await response.json();
         console.log('Link successfully deleted:', result);
+        await fetch_data();
     } catch (error) {
         console.error('Error deleting link:', error);
     }
@@ -544,6 +548,7 @@ async function fetch_update_projects(project_id) {
 
         const result = await response.json();
         console.log('Project successfully updated:', result);
+        await fetch_data();
     } catch (error) {
         console.error('Error updating project:', error);
     }
@@ -591,6 +596,7 @@ try {
 
     const result = await response.json();
     console.log('Pack successfully updated:', result);
+    await fetch_data();
 } catch (error) {
     console.error('Error updating pack:', error);
 }
@@ -607,13 +613,6 @@ let newProject = {
     difficulty: 3
 };
 
-const addProject = () => {
-    const newProjectEntry = { ...newProject, id: Date.now() };
-    projects = [...projects, newProjectEntry];
-    // プロジェクト追加後、入力をリセット
-    // newProject = { user_id: 1, name: '', description: '', kpi: 0, due_date: new Date().toISOString(), difficulty: 3 };
-    newProject = { user_id: 1, name: '', description: '', kpi: 0, due_date: new Date().toISOString().slice(0, 16), difficulty: 3 };
-};
 
 let newPack = {
     project_id: null,
@@ -626,11 +625,6 @@ let newPack = {
     act_description: '',
     act_done: 0,
     due_date: new Date().toISOString().slice(0, 16) // ISO形式の一部を使用
-};
-
-const handleDueDateChange = (event) => {
-    const date = new Date(event.target.value);
-    newPack.due_date = date.toISOString();
 };
 
 // パックを追加する
@@ -769,7 +763,15 @@ const sortPacks = (Sort_By_Asc_Or_Desc="asc") => {
     packs = [...new_packs];
 };
 
-
+// const addProject = () => {
+//     const newProjectEntry = { ...newProject, id: Date.now() };
+//     projects = [...projects, newProjectEntry];
+//     newProject = { user_id: 1, name: '', description: '', kpi: 0, due_date: new Date().toISOString().slice(0, 16), difficulty: 3 };
+// };
+// const handleDueDateChange = (event) => {
+//     const date = new Date(event.target.value);
+//     newPack.due_date = date.toISOString();
+// };
 </script>
 
 <style>
