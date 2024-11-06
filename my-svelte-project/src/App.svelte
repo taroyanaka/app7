@@ -795,6 +795,7 @@ const sortPacks = (Sort_By_Asc_Or_Desc="asc") => {
 </style>
 
 <header>
+    <div class="version">v1.0.0</div>
     <div>auth_login_result: {auth_login_result}</div>
     <div>auth_uid: {auth_uid}</div>
     <div>auth_user_id: {auth_user_id}</div>
@@ -823,7 +824,7 @@ const sortPacks = (Sort_By_Asc_Or_Desc="asc") => {
 </nav>
 
 {#if activeTab === 'projects'}
-    <button on:click={fetch_data}>Fetch Data</button>
+    <!-- <button on:click={fetch_data}>Fetch Data</button> -->
     <h2>{languageData.createProject}</h2>
 
     {#if auth_login_result === 'Logged in'  && auth_uid !== null}
