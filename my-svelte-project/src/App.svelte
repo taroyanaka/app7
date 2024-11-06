@@ -126,7 +126,6 @@ async function create_project() {
         console.error('Error creating project:', error);
     }
 }
-
 async function create_pack() {
     try {
         // newPackのdue_dateをISO8601形式に変換
@@ -174,7 +173,6 @@ async function create_pack() {
         console.error('Error creating pack:', error);
     }
 }
-
 async function create_link(pack_id, stage) {
     try {
         console.log(
@@ -241,7 +239,6 @@ async function all_test_fn_exe(){
     await test_create_pack();
     await test_create_link();
 }
-
 function toISOStringFromDatetimeLocal(datetimeLocalValue) {
     // input type="datetime-local"の値をと、
     // sqlite3のcreate_at(TEXT型)とupdate_at(TEXT型)に保存する際はISO8601形式で保存するため、
@@ -274,9 +271,9 @@ const all_validation_fn = {
         if (!Number.isInteger(project.kpi) || project.kpi < 0 || project.kpi > 100) {
             errors.push('Invalid project KPI');
         }
-        if (isNaN(Date.parse(project.due_date))) {
-            errors.push('Invalid project due date');
-        }
+        // if (isNaN(Date.parse(project.due_date))) {
+        //     errors.push('Invalid project due date');
+        // }
         if (!Number.isInteger(project.difficulty) || project.difficulty < 1 || project.difficulty > 5) {
             errors.push('Invalid project difficulty');
         }
@@ -723,6 +720,11 @@ const loadTranslations = async () => {
 };
 
 $: (async () => {
+    // due_dateをdatetime-local形式に変換
+    projects_and_packs = projects_and_packs.map(project => {
+        project.due_date = toDatetimeLocalFromISOString(project.due_date);
+        return project;
+    });
 
 })();
 
@@ -892,8 +894,8 @@ const sortedPacks = () => {
     <div>pack do_description: <input bind:value={newPack.do_description} type="text" placeholder={languageData.doDescription} maxlength="300"></div>
     <div>pack check_description: <input bind:value={newPack.check_description} type="text" placeholder={languageData.checkDescription} maxlength="300"></div>
     <div>pack act_description: <input bind:value={newPack.act_description} type="text" placeholder={languageData.actDescription} maxlength="300"></div>
-    <!-- <input bind:value={newPack.due_date} type="datetime-local" placeholder={languageData.packDueDate}> -->
-    <input bind:value={newPack.due_date} type="datetime-local" placeholder={languageData.packDueDate} on:change={handleDueDateChange}>
+    <input bind:value={newPack.due_date} type="datetime-local" placeholder={languageData.packDueDate}>
+    <!-- <input bind:value={newPack.due_date} type="datetime-local" placeholder={languageData.packDueDate} on:change={handleDueDateChange}> -->
     <button on:click={addPack}>{languageData.addPack}</button>
 </div>
 
