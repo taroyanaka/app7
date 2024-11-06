@@ -122,6 +122,7 @@ async function create_project() {
 
         const data = await response.json();
         console.log('Project created with ID:', data.id);
+        await fetch_data();
     } catch (error) {
         console.error('Error creating project:', error);
     }
@@ -169,6 +170,7 @@ async function create_pack() {
 
         const data = await response.json();
         console.log('Pack created with ID:', data.id);
+        await fetch_data();
     } catch (error) {
         console.error('Error creating pack:', error);
     }
@@ -221,6 +223,7 @@ async function create_link(pack_id, stage) {
         }
         const data = await response.json();
         console.log('Link created with ID:', data.id);
+        await fetch_data();
         // リンク追加後、入力をリセット
         new_link = {
             url: '',
@@ -795,7 +798,7 @@ const sortPacks = (Sort_By_Asc_Or_Desc="asc") => {
 </style>
 
 <header>
-    <div class="version">v1.0.0</div>
+    <div class="version">v1.0.1</div>
     <div>auth_login_result: {auth_login_result}</div>
     <div>auth_uid: {auth_uid}</div>
     <div>auth_user_id: {auth_user_id}</div>
