@@ -798,7 +798,7 @@ const sortPacks = (Sort_By_Asc_Or_Desc="asc") => {
 </style>
 
 <header>
-    <div class="version">v1.0.1</div>
+    <div class="version">v1.0.2</div>
     <div>auth_login_result: {auth_login_result}</div>
     <div>auth_uid: {auth_uid}</div>
     <div>auth_user_id: {auth_user_id}</div>
